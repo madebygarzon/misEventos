@@ -1,4 +1,4 @@
-## Guía de proyecto (MVP)
+## Guía para desarrollar el proyecto "Prueba técnica Desarrollador Backend" para mis datos
 
 Este documento es mi guía personal para construir y entregar el MVP de **Mis Eventos**.  
 Mi foco es una sola entrega funcional y sólida.
