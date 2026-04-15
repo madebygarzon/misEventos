@@ -19,7 +19,7 @@ Aplicación Full Stack para gestión de eventos con:
 - PostgreSQL 16+
 
 ---
-## 2) Clonar/abrir proyecto
+## 2) Clonar proyecto
 
 ```bash
 git clone https://github.com/madebygarzon/misEventos.git
@@ -239,23 +239,12 @@ docker compose up
 ```
 
 ---
-## 10) Estado actual del MVP
+## Autor
 
-Implementado:
-- Auth (`register/login/me`)
-- Events (CRUD + search + paginación)
-- Sessions (CRUD + validaciones de rango/ownership)
-- Registrations (register/cancel/my registrations + capacidad + no duplicados)
-- Frontend funcional MVP
-- Tests base backend/frontend
-
----
-## Author
-
-- Created by **Carlos Garzón**
+- Creado por **Carlos Garzón**
 - Software Engineer, Fullstack Developer.
 ---
 
-## Licenses
+## Licencia
 
 MIT

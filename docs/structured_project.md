@@ -482,3 +482,8 @@ Considero una parte terminada cuando:
 ### Cierre
 
 Mi objetivo es entregar un MVP sólido, coherente y profesional, sin meter complejidad que no aporte a esta prueba tecnica.
+
+---
+### Mayor detalle documental en Notion
+
+https://www.notion.so/Mis-Eventos-343ec673830580cabb86e1c423ef8424?source=copy_link
