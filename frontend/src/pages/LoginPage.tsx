@@ -11,8 +11,8 @@ export function LoginPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await login({ email, password });
-    navigate("/");
+    const ok = await login({ email, password });
+    if (ok) navigate("/");
   };
 
   return (

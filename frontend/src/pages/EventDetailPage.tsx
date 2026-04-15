@@ -7,6 +7,7 @@ import type { RegistrationItem } from "../types/registration";
 import type { SessionItem } from "../types/session";
 import { useAuthStore } from "../store/authStore";
 import { useEventsStore } from "../store/eventsStore";
+import { getErrorMessage } from "../utils/errors";
 
 export function EventDetailPage() {
   const { id } = useParams();
@@ -63,7 +64,7 @@ export function EventDetailPage() {
       setRegistrations(data.items);
       setRegMessage("Inscripción realizada correctamente.");
     } catch (err: any) {
-      setRegError(err?.response?.data?.detail || "No fue posible registrar la inscripción.");
+      setRegError(getErrorMessage(err, "No fue posible registrar la inscripción."));
     } finally {
       setRegLoading(false);
     }
@@ -81,7 +82,7 @@ export function EventDetailPage() {
       setRegistrations(data.items);
       setRegMessage("Inscripción cancelada.");
     } catch (err: any) {
-      setRegError(err?.response?.data?.detail || "No fue posible cancelar la inscripción.");
+      setRegError(getErrorMessage(err, "No fue posible cancelar la inscripción."));
     } finally {
       setRegLoading(false);
     }

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { myRegistrationsRequest } from "../api/registrations";
 import type { RegistrationItem } from "../types/registration";
+import { getErrorMessage } from "../utils/errors";
 
 export function ProfilePage() {
   const [items, setItems] = useState<RegistrationItem[]>([]);
@@ -14,7 +15,7 @@ export function ProfilePage() {
         const data = await myRegistrationsRequest();
         setItems(data.items);
       } catch (err: any) {
-        setError(err?.response?.data?.detail || "No fue posible cargar mis registros");
+        setError(getErrorMessage(err, "No fue posible cargar mis registros"));
       } finally {
         setLoading(false);
       }

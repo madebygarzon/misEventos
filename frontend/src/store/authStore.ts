@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { loginRequest, meRequest, registerRequest } from "../api/auth";
 import type { AuthUser } from "../types/auth";
+import { getErrorMessage } from "../utils/errors";
 
 type AuthState = {
   user: AuthUser | null;
@@ -9,8 +10,8 @@ type AuthState = {
   isAuthenticated: boolean;
   loading: boolean;
   error: string | null;
-  register: (payload: { email: string; password: string; full_name: string }) => Promise<void>;
-  login: (payload: { email: string; password: string }) => Promise<void>;
+  register: (payload: { email: string; password: string; full_name: string }) => Promise<boolean>;
+  login: (payload: { email: string; password: string }) => Promise<boolean>;
   fetchMe: () => Promise<void>;
   logout: () => void;
 };
@@ -30,8 +31,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("token", loginData.access_token);
       const me = await meRequest();
       set({ user: me, token: loginData.access_token, isAuthenticated: true, loading: false });
+      return true;
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "No fue posible registrarme", loading: false });
+      set({ error: getErrorMessage(error, "No fue posible registrarme"), loading: false });
+      return false;
     }
   },
 
@@ -42,8 +45,10 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.setItem("token", data.access_token);
       const me = await meRequest();
       set({ user: me, token: data.access_token, isAuthenticated: true, loading: false });
+      return true;
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "Credenciales inválidas", loading: false });
+      set({ error: getErrorMessage(error, "Credenciales inválidas"), loading: false });
+      return false;
     }
   },
 

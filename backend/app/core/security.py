@@ -6,7 +6,8 @@ from passlib.context import CryptContext
 
 from app.core.config import settings
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# bcrypt_sha256 evita el límite de 72 bytes; bcrypt queda para compatibilidad de hashes previos.
+pwd_context = CryptContext(schemes=["bcrypt_sha256", "bcrypt"], deprecated="auto")
 
 
 def create_access_token(subject: str, expires_delta: timedelta | None = None) -> str:

@@ -8,6 +8,7 @@ import {
   updateEventRequest
 } from "../api/events";
 import type { EventItem } from "../types/event";
+import { getErrorMessage } from "../utils/errors";
 
 type EventsState = {
   events: EventItem[];
@@ -48,7 +49,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
         loading: false
       });
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "No fue posible cargar eventos", loading: false });
+      set({ error: getErrorMessage(error, "No fue posible cargar eventos"), loading: false });
     }
   },
 
@@ -58,7 +59,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       const item = await getEventRequest(id);
       set({ currentEvent: item, loading: false });
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "Evento no encontrado", loading: false });
+      set({ error: getErrorMessage(error, "Evento no encontrado"), loading: false });
     }
   },
 
@@ -70,7 +71,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       set({ loading: false });
       return created;
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "No fue posible crear evento", loading: false });
+      set({ error: getErrorMessage(error, "No fue posible crear evento"), loading: false });
       return null;
     }
   },
@@ -83,7 +84,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       set({ currentEvent: updated, loading: false });
       return updated;
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "No fue posible actualizar evento", loading: false });
+      set({ error: getErrorMessage(error, "No fue posible actualizar evento"), loading: false });
       return null;
     }
   },
@@ -96,7 +97,7 @@ export const useEventsStore = create<EventsState>((set, get) => ({
       set({ loading: false });
       return true;
     } catch (error: any) {
-      set({ error: error?.response?.data?.detail || "No fue posible eliminar evento", loading: false });
+      set({ error: getErrorMessage(error, "No fue posible eliminar evento"), loading: false });
       return false;
     }
   }

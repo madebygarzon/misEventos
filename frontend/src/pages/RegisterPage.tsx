@@ -12,8 +12,8 @@ export function RegisterPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    await register({ full_name: fullName, email, password });
-    navigate("/");
+    const ok = await register({ full_name: fullName, email, password });
+    if (ok) navigate("/");
   };
 
   return (
