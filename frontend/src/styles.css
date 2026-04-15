@@ -1,0 +1,97 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%);
+  color: #122033;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.card {
+  background: #fff;
+  border: 1px solid #dbe6f5;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.grid {
+  display: grid;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+input, textarea, select, button {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #b8c9e5;
+}
+
+button {
+  cursor: pointer;
+  background: #164a9f;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+}
+
+button.secondary {
+  background: #eef4ff;
+  color: #12386f;
+  border: 1px solid #c7d8f3;
+}
+
+nav {
+  background: #0f2e57;
+  color: #fff;
+}
+
+nav a {
+  color: #fff;
+  text-decoration: none;
+  margin-right: 12px;
+  font-size: 14px;
+}
+
+.muted {
+  color: #4a6489;
+  font-size: 14px;
+}
+
+.error {
+  color: #b00020;
+  font-size: 14px;
+}
+
+.success {
+  color: #1a6b35;
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actions > button,
+.actions > a {
+  width: auto;
+}

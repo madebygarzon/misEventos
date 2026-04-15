@@ -1,4 +1,4 @@
-## Guía para desarrollar el proyecto "Prueba técnica Desarrollador Backend" para mis datos
+## Guía para desarrollar el proyecto "Prueba técnica Desarrollador Backend" para tusdatos.co
 
 Este documento es mi guía personal para construir y entregar el MVP de **Mis Eventos**.  
 Mi foco es una sola entrega funcional y sólida.
