@@ -22,7 +22,7 @@ Aplicación Full Stack para gestión de eventos con:
 ## 2) Clonar/abrir proyecto
 
 ```bash
-cd /Users/carlosgarzon/Desktop/DesktopBK/ByGarzon/pruebasTecnicas/tusdatos/misEventos
+git clone https://github.com/madebygarzon/misEventos.git
 ```
 
 ---
@@ -248,3 +248,14 @@ Implementado:
 - Registrations (register/cancel/my registrations + capacidad + no duplicados)
 - Frontend funcional MVP
 - Tests base backend/frontend
+
+---
+## Author
+
+- Created by **Carlos Garzón**
+- Software Engineer, Fullstack Developer.
+---
+
+## Licenses
+
+MIT
