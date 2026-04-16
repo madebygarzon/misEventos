@@ -1,11 +1,16 @@
 import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
 import { describe, expect, it } from "vitest";
 
 import { EventsListPage } from "./EventsListPage";
 
 describe("EventsListPage", () => {
   it("renders title", () => {
-    render(<EventsListPage />);
-    expect(screen.getByText("Eventos")).toBeInTheDocument();
+    render(
+      <MemoryRouter>
+        <EventsListPage />
+      </MemoryRouter>
+    );
+    expect(screen.getByText("Bienvenidos a Mis Eventos")).toBeInTheDocument();
   });
 });

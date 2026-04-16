@@ -5,6 +5,10 @@ export type EventItem = {
   name: string;
   description: string | null;
   location: string | null;
+  featured_image_sm_url?: string | null;
+  featured_image_md_url?: string | null;
+  featured_image_lg_url?: string | null;
+  featured_image_alt?: string | null;
   start_date: string;
   end_date: string;
   capacity: number;

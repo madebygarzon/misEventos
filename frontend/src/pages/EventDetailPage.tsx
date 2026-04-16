@@ -10,8 +10,10 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
+import { EventFeaturedImage } from "@/components/EventFeaturedImage";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { confirmDialog, notifyError, notifySuccess } from "@/utils/notifications";
 import { cancelRegistrationRequest, myRegistrationsRequest, registerToEventRequest } from "../api/registrations";
 import {
   assignSpeakerToSessionRequest,
@@ -75,6 +77,34 @@ export function EventDetailPage() {
       currentEvent &&
       (isAdmin || currentEvent.organizer_id === user.id)
   );
+
+  useEffect(() => {
+    if (error) notifyError(error);
+  }, [error]);
+
+  useEffect(() => {
+    if (sessionsError) notifyError(sessionsError);
+  }, [sessionsError]);
+
+  useEffect(() => {
+    if (speakerError) notifyError(speakerError);
+  }, [speakerError]);
+
+  useEffect(() => {
+    if (regError) notifyError(regError);
+  }, [regError]);
+
+  useEffect(() => {
+    if (sessionMessage) notifySuccess(sessionMessage);
+  }, [sessionMessage]);
+
+  useEffect(() => {
+    if (speakerMessage) notifySuccess(speakerMessage);
+  }, [speakerMessage]);
+
+  useEffect(() => {
+    if (regMessage) notifySuccess(regMessage);
+  }, [regMessage]);
 
   const loadSessions = async (eventId: string) => {
     setSessionsLoading(true);
@@ -234,9 +264,13 @@ export function EventDetailPage() {
 
   const onDeleteSession = async (sessionId: string, sessionTitle: string) => {
     if (!id) return;
-    const confirmed = window.confirm(
-      `¿Seguro que quieres eliminar la sesión "${sessionTitle}"? Esta acción no se puede deshacer.`
-    );
+    const confirmed = await confirmDialog({
+      title: "Eliminar sesión",
+      text: `¿Seguro que quieres eliminar la sesión "${sessionTitle}"? Esta acción no se puede deshacer.`,
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      icon: "warning"
+    });
     if (!confirmed) return;
 
     setSessionActionLoading(true);
@@ -259,6 +293,14 @@ export function EventDetailPage() {
 
   const onDelete = async () => {
     if (!id) return;
+    const confirmed = await confirmDialog({
+      title: "Eliminar evento",
+      text: "Esta acción no se puede deshacer.",
+      confirmButtonText: "Sí, eliminar",
+      cancelButtonText: "Cancelar",
+      icon: "warning"
+    });
+    if (!confirmed) return;
     const ok = await deleteEvent(id);
     if (ok) navigate("/");
   };
@@ -386,6 +428,15 @@ export function EventDetailPage() {
       {currentEvent && (
         <>
           <Card className="mb-4">
+            <EventFeaturedImage
+              name={currentEvent.name}
+              alt={currentEvent.featured_image_alt}
+              smUrl={currentEvent.featured_image_sm_url}
+              mdUrl={currentEvent.featured_image_md_url}
+              lgUrl={currentEvent.featured_image_lg_url}
+              className="max-h-80 w-full object-cover"
+              sizes="(max-width: 768px) 100vw, 980px"
+            />
             <CardHeader>
               <CardTitle>{currentEvent.name}</CardTitle>
               <CardDescription>

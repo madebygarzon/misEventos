@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
+import { notifyError, notifySuccess } from "@/utils/notifications";
 import { getEventRequest } from "../api/events";
 import { listEventsRequest } from "../api/events";
 import { myRegistrationsRequest } from "../api/registrations";
@@ -41,6 +42,22 @@ export function ProfilePage() {
   const isOrganizerRole = Boolean(user?.roles?.includes("organizer"));
   const canViewOrganizerCards = isOrganizerRole || isAdmin;
   const visibleUsers = users.filter((item) => item.id !== user?.id);
+
+  useEffect(() => {
+    if (organizedError) notifyError(organizedError);
+  }, [organizedError]);
+
+  useEffect(() => {
+    if (error) notifyError(error);
+  }, [error]);
+
+  useEffect(() => {
+    if (usersError) notifyError(usersError);
+  }, [usersError]);
+
+  useEffect(() => {
+    if (roleSuccess) notifySuccess(roleSuccess);
+  }, [roleSuccess]);
 
   useEffect(() => {
     const run = async () => {
