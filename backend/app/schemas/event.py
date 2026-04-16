@@ -26,6 +26,7 @@ class EventUpdate(BaseModel):
 class EventResponse(BaseModel):
     id: str
     organizer_id: str
+    organizer_name: str | None = None
     name: str
     description: str | None
     location: str | None

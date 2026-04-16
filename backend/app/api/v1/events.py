@@ -6,16 +6,19 @@ from sqlmodel import Session
 from app.api.deps import get_current_user, get_db_session, require_roles
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
+from app.repositories.user_repository import UserRepository
 from app.schemas.event import EventCreate, EventListResponse, EventResponse, EventUpdate
 from app.services.event_service import EventService
 
 router = APIRouter(prefix="/events", tags=["events"])
 
 
-def _to_response(event) -> EventResponse:
+def _to_response(event, session: Session) -> EventResponse:
+    organizer = UserRepository(session).get_by_id(event.organizer_id)
     return EventResponse(
         id=str(event.id),
         organizer_id=str(event.organizer_id),
+        organizer_name=organizer.full_name if organizer else None,
         name=event.name,
         description=event.description,
         location=event.location,
@@ -39,7 +42,7 @@ def list_events(
     service = EventService(EventRepository(session))
     result = service.list(search=search, status_filter=status_filter, page=page, limit=limit)
     return EventListResponse(
-        items=[_to_response(item) for item in result["items"]],
+        items=[_to_response(item, session) for item in result["items"]],
         total=result["total"],
         page=result["page"],
         limit=result["limit"],
@@ -51,7 +54,7 @@ def list_events(
 def get_event(event_id: UUID, session: Session = Depends(get_db_session)) -> EventResponse:
     service = EventService(EventRepository(session))
     event = service.get_by_id(event_id)
-    return _to_response(event)
+    return _to_response(event, session)
 
 
 @router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -63,7 +66,7 @@ def create_event(
 ) -> EventResponse:
     service = EventService(EventRepository(session))
     event = service.create(payload=payload, organizer_id=current_user.id)
-    return _to_response(event)
+    return _to_response(event, session)
 
 
 @router.put("/{event_id}", response_model=EventResponse)
@@ -81,7 +84,7 @@ def update_event(
         current_user_id=current_user.id,
         is_admin="admin" in role_names,
     )
-    return _to_response(event)
+    return _to_response(event, session)
 
 
 @router.delete("/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

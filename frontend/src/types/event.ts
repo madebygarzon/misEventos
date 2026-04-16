@@ -1,6 +1,7 @@
 export type EventItem = {
   id: string;
   organizer_id: string;
+  organizer_name?: string | null;
   name: string;
   description: string | null;
   location: string | null;

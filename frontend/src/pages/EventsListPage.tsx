@@ -1,6 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { useAuthStore } from "../store/authStore";
 import { useEventsStore } from "../store/eventsStore";
 import { eventStatusLabel } from "../utils/labels";
@@ -25,38 +35,54 @@ export function EventsListPage() {
       <h1>Eventos</h1>
       <p className="muted">Consulta, filtra y navega entre eventos disponibles.</p>
 
-      <div className="card grid grid-2">
-        <input
+      <Card className="mb-4">
+        <CardContent className="grid gap-3 px-4 pt-4 md:grid-cols-[1fr_auto]">
+          <Input
           placeholder="Buscar por nombre"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
-        <button onClick={onSearch}>Buscar</button>
-      </div>
+          <Button onClick={onSearch} className="md:w-auto">
+            Buscar
+          </Button>
+        </CardContent>
+      </Card>
 
       {loading && <p className="muted">Cargando eventos...</p>}
       {error && <p className="error">{error}</p>}
 
       {events.map((event) => (
-        <div key={event.id} className="card">
-          <h3>{event.name}</h3>
-          <p className="muted">{event.location || "Sin ubicación"} · {eventStatusLabel(event.status)}</p>
-          <p>{event.description || "Sin descripción"}</p>
-          <div className="actions">
-            <Link to={`/events/${event.id}`}>Ver detalle</Link>
-            {canManageEvents && (isAdmin || user?.id === event.organizer_id) && <Link to={`/events/${event.id}/edit`}>Editar</Link>}
-          </div>
-        </div>
+        <Card key={event.id} className="mb-3">
+          <CardHeader>
+            <CardTitle>{event.name}</CardTitle>
+            <CardDescription>
+              {event.location || "Sin ubicación"} · {eventStatusLabel(event.status)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>{event.description || "Sin descripción"}</p>
+          </CardContent>
+          <CardFooter className="gap-2">
+            <Button asChild variant="outline" size="sm">
+              <Link to={`/events/${event.id}`}>Ver detalle</Link>
+            </Button>
+            {canManageEvents && (isAdmin || user?.id === event.organizer_id) && (
+              <Button asChild size="sm">
+                <Link to={`/events/${event.id}/edit`}>Editar</Link>
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
       ))}
 
       <div className="actions">
-        <button className="secondary" disabled={page <= 1} onClick={() => fetchEvents({ page: page - 1 })}>
+        <Button variant="outline" disabled={page <= 1} onClick={() => fetchEvents({ page: page - 1 })}>
           Anterior
-        </button>
+        </Button>
         <span className="muted">Página {page} de {pages}</span>
-        <button className="secondary" disabled={page >= pages} onClick={() => fetchEvents({ page: page + 1 })}>
+        <Button variant="outline" disabled={page >= pages} onClick={() => fetchEvents({ page: page + 1 })}>
           Siguiente
-        </button>
+        </Button>
       </div>
     </div>
   );

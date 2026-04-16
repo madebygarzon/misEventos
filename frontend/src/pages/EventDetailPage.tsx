@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { cancelRegistrationRequest, myRegistrationsRequest, registerToEventRequest } from "../api/registrations";
 import {
   assignSpeakerToSessionRequest,
@@ -374,50 +385,64 @@ export function EventDetailPage() {
 
       {currentEvent && (
         <>
-          <div className="card">
-            <h1>{currentEvent.name}</h1>
-            <p className="muted">{eventStatusLabel(currentEvent.status)} · {currentEvent.location || "Sin ubicación"}</p>
-            <p>{currentEvent.description || "Sin descripción"}</p>
-            <p className="muted">Capacidad: {currentEvent.capacity}</p>
-
-            <div className="actions">
+          <Card className="mb-4">
+            <CardHeader>
+              <CardTitle>{currentEvent.name}</CardTitle>
+              <CardDescription>
+                {eventStatusLabel(currentEvent.status)} · {currentEvent.location || "Sin ubicación"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <p>{currentEvent.description || "Sin descripción"}</p>
+              <p className="muted">Capacidad: {currentEvent.capacity}</p>
+            </CardContent>
+            <CardFooter className="flex-wrap gap-2">
               {isAuthenticated && !isRegistered && (
-                <button onClick={onRegister} disabled={regLoading}>Inscribirme</button>
+                <Button onClick={onRegister} disabled={regLoading}>Inscribirme</Button>
               )}
               {isAuthenticated && isRegistered && (
-                <button className="secondary" onClick={onCancel} disabled={regLoading}>Cancelar inscripción</button>
+                <Button variant="outline" onClick={onCancel} disabled={regLoading}>
+                  Cancelar inscripción
+                </Button>
               )}
-              {isOrganizer && <Link to={`/events/${currentEvent.id}/edit`}>Editar evento</Link>}
-              {isOrganizer && <button onClick={onDelete}>Eliminar evento</button>}
-            </div>
+              {isOrganizer && (
+                <Button asChild variant="outline">
+                  <Link to={`/events/${currentEvent.id}/edit`}>Editar evento</Link>
+                </Button>
+              )}
+              {isOrganizer && <Button onClick={onDelete}>Eliminar evento</Button>}
+            </CardFooter>
 
             {!isAuthenticated && (
               <p className="muted">Inicia sesión para poder inscribirte al evento.</p>
             )}
             {regMessage && <p className="success">{regMessage}</p>}
             {regError && <p className="error">{regError}</p>}
-          </div>
+          </Card>
 
-          <div className="card">
-            <h2>Sesiones</h2>
-            {currentEvent && (
-              <p className="muted">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sesiones</CardTitle>
+              {currentEvent && (
+                <CardDescription>
                 Rango del evento: {new Date(currentEvent.start_date).toLocaleString()} -{" "}
                 {new Date(currentEvent.end_date).toLocaleString()}
-              </p>
-            )}
+                </CardDescription>
+              )}
+            </CardHeader>
+            <CardContent className="space-y-4">
             {isOrganizer && (
               <>
-                <form className="grid" onSubmit={onSessionSubmit}>
+                <form className="grid gap-3" onSubmit={onSessionSubmit}>
                   <div className="grid grid-2">
-                    <input
+                    <Input
                       type="text"
                       placeholder="Título de la sesión"
                       value={sessionForm.title}
                       onChange={(e) => setSessionForm((prev) => ({ ...prev, title: e.target.value }))}
                       required
                     />
-                    <input
+                    <Input
                       type="number"
                       min={1}
                       placeholder="Capacidad"
@@ -426,14 +451,14 @@ export function EventDetailPage() {
                       required
                     />
                   </div>
-                  <textarea
+                  <Textarea
                     placeholder="Descripción"
                     value={sessionForm.description}
                     onChange={(e) => setSessionForm((prev) => ({ ...prev, description: e.target.value }))}
                     rows={3}
                   />
                   <div className="grid grid-2">
-                    <input
+                    <Input
                       type="datetime-local"
                       value={sessionForm.start_time}
                       min={eventStartLocal}
@@ -441,7 +466,7 @@ export function EventDetailPage() {
                       onChange={(e) => setSessionForm((prev) => ({ ...prev, start_time: e.target.value }))}
                       required
                     />
-                    <input
+                    <Input
                       type="datetime-local"
                       value={sessionForm.end_time}
                       min={eventStartLocal}
@@ -465,46 +490,50 @@ export function EventDetailPage() {
                     <option value="cancelled">{sessionStatusLabel("cancelled")}</option>
                   </select>
                   <div className="actions">
-                    <button type="submit" disabled={sessionActionLoading}>
+                    <Button type="submit" disabled={sessionActionLoading}>
                       {editingSessionId ? "Actualizar sesión" : "Crear sesión"}
-                    </button>
+                    </Button>
                     {editingSessionId && (
-                      <button
+                      <Button
                         type="button"
-                        className="secondary"
+                        variant="outline"
                         onClick={resetSessionForm}
                         disabled={sessionActionLoading}
                       >
                         Cancelar edición
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </form>
 
-                <div className="card" style={{ marginTop: "12px" }}>
-                  <h3>Ponentes</h3>
-                  <p className="muted">
+                <Card className="mt-2">
+                  <CardHeader>
+                    <CardTitle>Ponentes</CardTitle>
+                    <CardDescription>
                     Un ponente puede ser cualquier persona: tú mismo, otro usuario o alguien sin cuenta.
-                  </p>
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
                   <form className="grid grid-2" onSubmit={onCreateSpeaker}>
-                    <input
+                    <Input
                       type="text"
                       placeholder="Nombre completo del ponente"
                       value={speakerForm.full_name}
                       onChange={(e) => setSpeakerForm((prev) => ({ ...prev, full_name: e.target.value }))}
                       required
                     />
-                    <input
+                    <Input
                       type="email"
                       placeholder="Correo (opcional)"
                       value={speakerForm.email}
                       onChange={(e) => setSpeakerForm((prev) => ({ ...prev, email: e.target.value }))}
                     />
-                    <button type="submit" disabled={speakersLoading}>Crear ponente</button>
+                    <Button type="submit" disabled={speakersLoading} className="md:w-auto">Crear ponente</Button>
                   </form>
+                  </CardContent>
                   {speakerMessage && <p className="success">{speakerMessage}</p>}
                   {speakerError && <p className="error">{speakerError}</p>}
-                </div>
+                </Card>
               </>
             )}
             {sessionsLoading && <p className="muted">Cargando sesiones...</p>}
@@ -512,12 +541,17 @@ export function EventDetailPage() {
             {sessionMessage && <p className="success">{sessionMessage}</p>}
             {!sessions.length && <p className="muted">Este evento no tiene sesiones registradas todavía.</p>}
             {sessions.map((session) => (
-              <div key={session.id} className="card" style={{ margin: "8px 0" }}>
-                <h3>{session.title}</h3>
-                <p className="muted">{new Date(session.start_time).toLocaleString()} - {new Date(session.end_time).toLocaleString()}</p>
-                <p>{session.description || "Sin descripción"}</p>
-                <p className="muted">Estado: {sessionStatusLabel(session.status)} · Capacidad: {session.capacity}</p>
-                <div style={{ marginTop: "8px" }}>
+              <Card key={session.id} className="mb-2">
+                <CardHeader>
+                  <CardTitle>{session.title}</CardTitle>
+                  <CardDescription>
+                    {new Date(session.start_time).toLocaleString()} - {new Date(session.end_time).toLocaleString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  <p>{session.description || "Sin descripción"}</p>
+                  <p className="muted">Estado: {sessionStatusLabel(session.status)} · Capacidad: {session.capacity}</p>
+                <div className="mt-2">
                   <p><strong>Ponentes asignados:</strong></p>
                   {!sessionSpeakersMap[session.id]?.length && (
                     <p className="muted">No hay ponentes asignados en esta sesión.</p>
@@ -531,14 +565,15 @@ export function EventDetailPage() {
                             {item.role_in_session ? ` · ${item.role_in_session}` : ""}
                           </span>
                           {isOrganizer && (
-                            <button
+                            <Button
                               type="button"
-                              className="secondary"
+                              size="sm"
+                              variant="outline"
                               onClick={() => onRemoveSpeaker(session.id, item.speaker_id)}
                               disabled={assigningSessionId === session.id}
                             >
                               Remover
-                            </button>
+                            </Button>
                           )}
                         </div>
                       ))}
@@ -558,7 +593,7 @@ export function EventDetailPage() {
                           <option key={speaker.id} value={speaker.id}>{speaker.full_name}</option>
                         ))}
                       </select>
-                      <input
+                      <Input
                         type="text"
                         placeholder="Rol en sesión (opcional)"
                         value={getDraft(session.id).roleInSession}
@@ -567,34 +602,36 @@ export function EventDetailPage() {
                       />
                     </div>
                     <div className="actions">
-                      <button
+                      <Button
                         type="button"
                         onClick={() => onAssignSpeaker(session.id)}
                         disabled={!getDraft(session.id).speakerId || assigningSessionId === session.id}
                       >
                         Asignar ponente
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
-                        className="secondary"
+                        variant="outline"
                         onClick={() => onEditSession(session)}
                         disabled={sessionActionLoading}
                       >
                         Editar
-                      </button>
-                      <button
+                      </Button>
+                      <Button
                         type="button"
                         onClick={() => onDeleteSession(session.id, session.title)}
                         disabled={sessionActionLoading}
                       >
                         Eliminar
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 )}
-              </div>
+                </CardContent>
+              </Card>
             ))}
-          </div>
+            </CardContent>
+          </Card>
         </>
       )}
     </div>
