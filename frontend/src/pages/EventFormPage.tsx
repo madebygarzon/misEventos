@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import { useAuthStore } from "../store/authStore";
 import { useEventsStore } from "../store/eventsStore";
+import { eventStatusLabel } from "../utils/labels";
 
 const initialState = {
   name: "",
@@ -17,9 +19,11 @@ export function EventFormPage() {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
   const { currentEvent, loading, error, fetchEventById, createEvent, updateEvent } = useEventsStore();
   const [form, setForm] = useState(initialState);
   const [success, setSuccess] = useState("");
+  const canManageEvents = Boolean(user?.roles?.includes("organizer") || user?.roles?.includes("admin"));
 
   useEffect(() => {
     if (isEdit && id) fetchEventById(id);
@@ -69,6 +73,12 @@ export function EventFormPage() {
   return (
     <div className="container">
       <h1>{isEdit ? "Editar evento" : "Crear evento"}</h1>
+      {!canManageEvents && (
+        <div className="card">
+          <p className="error">Tu rol actual no permite crear o editar eventos.</p>
+        </div>
+      )}
+      {canManageEvents && (
       <form className="card grid" onSubmit={onSubmit}>
         <input
           placeholder="Nombre"
@@ -112,16 +122,17 @@ export function EventFormPage() {
           required
         />
         <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-          <option value="draft">Draft</option>
-          <option value="published">Published</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="finished">Finished</option>
+          <option value="draft">{eventStatusLabel("draft")}</option>
+          <option value="published">{eventStatusLabel("published")}</option>
+          <option value="cancelled">{eventStatusLabel("cancelled")}</option>
+          <option value="finished">{eventStatusLabel("finished")}</option>
         </select>
 
         <button disabled={loading} type="submit">{isEdit ? "Guardar cambios" : "Crear evento"}</button>
         {success && <p className="success">{success}</p>}
         {error && <p className="error">{error}</p>}
       </form>
+      )}
     </div>
   );
 }

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from sqlmodel import Session, select
 
 from app.models.user import User
@@ -16,3 +18,10 @@ class UserRepository:
         self.session.commit()
         self.session.refresh(user)
         return user
+
+    def get_by_id(self, user_id: UUID) -> User | None:
+        return self.session.get(User, user_id)
+
+    def list_all(self) -> list[User]:
+        statement = select(User).order_by(User.created_at.desc())
+        return list(self.session.exec(statement).all())

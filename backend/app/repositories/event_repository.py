@@ -33,6 +33,10 @@ class EventRepository:
             statement = statement.where(Event.status == status)
         return len(self.session.exec(statement).all())
 
+    def count_by_organizer(self, organizer_id) -> int:
+        statement = select(Event).where(Event.organizer_id == organizer_id)
+        return len(self.session.exec(statement).all())
+
     def update(self, event: Event) -> Event:
         self.session.add(event)
         self.session.commit()

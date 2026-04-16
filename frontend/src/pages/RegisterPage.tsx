@@ -26,10 +26,16 @@ export function RegisterPage() {
           onChange={(e) => setFullName(e.target.value)}
           required
         />
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

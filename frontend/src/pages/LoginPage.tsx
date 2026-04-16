@@ -19,10 +19,16 @@ export function LoginPage() {
     <div className="container">
       <h1>Iniciar sesión</h1>
       <form className="card grid" onSubmit={onSubmit}>
-        <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <input
+          type="email"
+          placeholder="Correo electrónico"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+        />
         <input
           type="password"
-          placeholder="Password"
+          placeholder="Contraseña"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required

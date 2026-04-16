@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
-from app.api.deps import get_current_user, get_db_session
+from app.api.deps import get_current_user, get_db_session, require_roles
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.repositories.session_repository import SessionRepository
@@ -45,9 +45,15 @@ def create_event_session(
     payload: SessionCreate,
     session: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
+    role_names: set[str] = Depends(require_roles("organizer", "admin")),
 ) -> SessionResponse:
     service = SessionService(SessionRepository(session), EventRepository(session))
-    created = service.create(event_id=event_id, payload=payload, current_user_id=current_user.id)
+    created = service.create(
+        event_id=event_id,
+        payload=payload,
+        current_user_id=current_user.id,
+        is_admin="admin" in role_names,
+    )
     return _to_response(created)
 
 
@@ -57,9 +63,15 @@ def update_session(
     payload: SessionUpdate,
     session: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
+    role_names: set[str] = Depends(require_roles("organizer", "admin")),
 ) -> SessionResponse:
     service = SessionService(SessionRepository(session), EventRepository(session))
-    updated = service.update(session_id=session_id, payload=payload, current_user_id=current_user.id)
+    updated = service.update(
+        session_id=session_id,
+        payload=payload,
+        current_user_id=current_user.id,
+        is_admin="admin" in role_names,
+    )
     return _to_response(updated)
 
 
@@ -68,6 +80,11 @@ def delete_session(
     session_id: UUID,
     session: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
+    role_names: set[str] = Depends(require_roles("organizer", "admin")),
 ) -> None:
     service = SessionService(SessionRepository(session), EventRepository(session))
-    service.delete(session_id=session_id, current_user_id=current_user.id)
+    service.delete(
+        session_id=session_id,
+        current_user_id=current_user.id,
+        is_admin="admin" in role_names,
+    )

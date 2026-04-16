@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
+import { useAuthStore } from "../store/authStore";
 import { useEventsStore } from "../store/eventsStore";
+import { eventStatusLabel } from "../utils/labels";
 
 export function EventsListPage() {
+  const { user } = useAuthStore();
   const { events, loading, error, page, pages, fetchEvents } = useEventsStore();
   const [search, setSearch] = useState("");
+  const isAdmin = Boolean(user?.roles?.includes("admin"));
+  const canManageEvents = Boolean(user?.roles?.includes("organizer") || isAdmin);
 
   useEffect(() => {
     fetchEvents({ page: 1, limit: 10 });
@@ -35,11 +40,11 @@ export function EventsListPage() {
       {events.map((event) => (
         <div key={event.id} className="card">
           <h3>{event.name}</h3>
-          <p className="muted">{event.location || "Sin ubicación"} · {event.status}</p>
+          <p className="muted">{event.location || "Sin ubicación"} · {eventStatusLabel(event.status)}</p>
           <p>{event.description || "Sin descripción"}</p>
           <div className="actions">
             <Link to={`/events/${event.id}`}>Ver detalle</Link>
-            <Link to={`/events/${event.id}/edit`}>Editar</Link>
+            {canManageEvents && (isAdmin || user?.id === event.organizer_id) && <Link to={`/events/${event.id}/edit`}>Editar</Link>}
           </div>
         </div>
       ))}

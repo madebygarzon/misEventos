@@ -10,3 +10,14 @@ export type SessionItem = {
   created_at: string;
   updated_at: string;
 };
+
+export type SessionCreatePayload = {
+  title: string;
+  description?: string | null;
+  start_time: string;
+  end_time: string;
+  capacity: number;
+  status: "scheduled" | "in_progress" | "finished" | "cancelled";
+};
+
+export type SessionUpdatePayload = Partial<SessionCreatePayload>;

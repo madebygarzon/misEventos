@@ -61,10 +61,10 @@ class EventService:
         pages = max(1, ceil(total / limit))
         return {"items": items, "total": total, "page": page, "limit": limit, "pages": pages}
 
-    def update(self, event_id: UUID, payload: EventUpdate, current_user_id: UUID) -> Event:
+    def update(self, event_id: UUID, payload: EventUpdate, current_user_id: UUID, is_admin: bool = False) -> Event:
         event = self.get_by_id(event_id)
 
-        if event.organizer_id != current_user_id:
+        if not is_admin and event.organizer_id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         update_data = payload.model_dump(exclude_unset=True)
@@ -82,8 +82,8 @@ class EventService:
         event.updated_at = datetime.now(timezone.utc)
         return self.event_repository.update(event)
 
-    def delete(self, event_id: UUID, current_user_id: UUID) -> None:
+    def delete(self, event_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
         event = self.get_by_id(event_id)
-        if event.organizer_id != current_user_id:
+        if not is_admin and event.organizer_id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
         self.event_repository.delete(event)

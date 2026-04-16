@@ -47,10 +47,16 @@ class SessionService:
         self._get_event_or_404(event_id)
         return self.session_repository.list_by_event(event_id)
 
-    def create(self, event_id: UUID, payload: SessionCreate, current_user_id: UUID) -> EventSession:
+    def create(
+        self,
+        event_id: UUID,
+        payload: SessionCreate,
+        current_user_id: UUID,
+        is_admin: bool = False,
+    ) -> EventSession:
         event = self._get_event_or_404(event_id)
 
-        if event.organizer_id != current_user_id:
+        if not is_admin and event.organizer_id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         self._validate_status(payload.status)
@@ -68,13 +74,19 @@ class SessionService:
         )
         return self.session_repository.create(event_session)
 
-    def update(self, session_id: UUID, payload: SessionUpdate, current_user_id: UUID) -> EventSession:
+    def update(
+        self,
+        session_id: UUID,
+        payload: SessionUpdate,
+        current_user_id: UUID,
+        is_admin: bool = False,
+    ) -> EventSession:
         event_session = self.session_repository.get_by_id(session_id)
         if not event_session:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         event = self._get_event_or_404(event_session.event_id)
-        if event.organizer_id != current_user_id:
+        if not is_admin and event.organizer_id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         update_data = payload.model_dump(exclude_unset=True)
@@ -94,13 +106,13 @@ class SessionService:
         event_session.updated_at = datetime.now(timezone.utc)
         return self.session_repository.update(event_session)
 
-    def delete(self, session_id: UUID, current_user_id: UUID) -> None:
+    def delete(self, session_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
         event_session = self.session_repository.get_by_id(session_id)
         if not event_session:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
 
         event = self._get_event_or_404(event_session.event_id)
-        if event.organizer_id != current_user_id:
+        if not is_admin and event.organizer_id != current_user_id:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         self.session_repository.delete(event_session)

@@ -28,6 +28,7 @@ Mi foco es una sola entrega funcional y sólida.
 - gestión de sesiones por evento.
 - inscripción de usuarios a eventos.
 - consulta de eventos inscritos por usuario.
+- gestión de usuarios y roles desde perfil admin.
 - validaciones críticas de negocio.
 - Swagger/OpenAPI disponible.
 - ejecución con Docker Compose.
@@ -52,8 +53,9 @@ También crea sesiones, ajusta horarios y asigna ponentes.
 
 #### 4. Administrador
 
-En esta entrega lo tomo como visión funcional de supervisión, sin implementar un RBAC completo.  
-Me sirve para mantener claro el modelo sin sobrecargar el alcance.
+El rol `admin` tiene permisos globales de gestión.  
+En la implementación actual sí dejé RBAC activo con tres roles: `admin`, `organizer`, `attendee`.
+Desde perfil, el admin también puede gestionar usuarios y cambiar su rol.
 
 ---
 ## Reglas de negocio
@@ -63,6 +65,8 @@ Me sirve para mantener claro el modelo sin sobrecargar el alcance.
 - no permitir eventos con fechas inválidas.
 - no permitir sesiones con horarios inválidos.
 - no permitir sesiones fuera del rango del evento.
+- no permitir cambiar un usuario a `attendee` si ya creó eventos.
+- el admin principal configurado (`madebygarzon@gmail.com`) no puede perder rol `admin`.
 
 ---
 ### Modelo base de datos
@@ -118,7 +122,7 @@ erDiagram
     SPEAKERS {
       uuid id PK
       string full_name
-      string email
+      string email "nullable"
       text bio
       string company
       string job_title
@@ -147,7 +151,7 @@ erDiagram
 
     ROLES {
       uuid id PK
-      string name UK
+      string name UK "admin|organizer|attendee"
       string description
       timestamp created_at
     }
@@ -165,6 +169,10 @@ erDiagram
 - `users.email` único.
 - `events.capacity > 0`.
 - `sessions.capacity > 0`.
+- `events.organizer_id` referencia `users.id`.
+- `sessions.event_id` referencia `events.id`.
+- `registrations.user_id` referencia `users.id`.
+- `registrations.event_id` referencia `events.id`.
 - `events.start_date < events.end_date`.
 - `sessions.start_time < sessions.end_time`.
 - sesión dentro del rango del evento.
@@ -172,14 +180,23 @@ erDiagram
 - `session_speakers` único por `(session_id, speaker_id)`.
 - `roles.name` único.
 - `user_roles` único por `(user_id, role_id)`.
+- `speakers` no depende de `users` (ponente no necesita cuenta).
+- en la lógica actual, al actualizar rol desde administración dejo un solo rol activo por usuario.
 
 #### Índices
 
 - `events(name)`.
 - `events(status)`.
+- `events(organizer_id)`.
 - `sessions(event_id, start_time)`.
 - `registrations(event_id)`.
 - `registrations(user_id)`.
+- `roles(name)`.
+- `user_roles(user_id, role_id)` único.
+- `speakers(full_name)`.
+- `speakers(email)`.
+- `session_speakers(session_id)`.
+- `session_speakers(speaker_id)`.
 
 ---
 ### Arquitectura para esta entrega
@@ -280,7 +297,7 @@ Con esto logro un sistema simple de desplegar, fácil de probar y suficientement
 - **PostgreSQL** -> servicio `db` en Docker Compose.
 - **Poetry** -> gestión de dependencias backend.
 - **Alembic** -> versionado y ejecución de migraciones.
-- **Tests unitarios (pytest)** -> suite mínima para auth/eventos/inscripciones.
+- **Tests unitarios (pytest)** -> suite mínima para auth/eventos/sesiones/inscripciones/usuarios.
 - **Swagger/OpenAPI** -> documentación automática de FastAPI.
 
 ### Frontend técnico
@@ -347,7 +364,12 @@ Filtros:
 
 - `POST /api/v1/events/{event_id}/register`
 - `GET /api/v1/users/me/registrations`
-- `DELETE /api/v1/events/{event_id}/register` (si alcanzo en tiempo)
+- `DELETE /api/v1/events/{event_id}/register`
+
+### Users (admin)
+
+- `GET /api/v1/users`
+- `PATCH /api/v1/users/{user_id}/role`
 
 ---
 ## Estructura del repositorio a seguir
@@ -397,6 +419,7 @@ misEventos/
 - `/login`
 - `/register`
 - `/profile`
+- `/profile` incluye gestión de usuarios (solo admin).
 
 ### Componentes base
 
@@ -434,6 +457,8 @@ misEventos/
 - JWT para autenticación.
 - rutas protegidas en backend.
 - guardas de ruta en frontend.
+- RBAC por rol (`admin`, `organizer`, `attendee`) aplicado por endpoint.
+- `admin` con permisos globales; `organizer` con gestión de eventos/sesiones; `attendee` con inscripción/cancelación.
 
 ---
 ## Plan de implementación (ruta de trabajo)

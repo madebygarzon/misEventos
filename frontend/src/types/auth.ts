@@ -3,6 +3,7 @@ export type AuthUser = {
   email: string;
   full_name: string;
   is_active: boolean;
+  roles: string[];
 };
 
 export type LoginResponse = {

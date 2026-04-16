@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
-from app.api.deps import get_current_user, get_db_session
+from app.api.deps import get_current_user, get_db_session, require_roles
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.repositories.registration_repository import RegistrationRepository
@@ -38,6 +38,7 @@ def register_to_event(
     payload: RegistrationCreate,
     session: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
+    _: set[str] = Depends(require_roles("attendee", "organizer", "admin")),
 ) -> RegistrationResponse:
     service = RegistrationService(RegistrationRepository(session), EventRepository(session))
     registration = service.register(user_id=current_user.id, event_id=event_id, payload=payload)
@@ -49,6 +50,7 @@ def cancel_registration(
     event_id: UUID,
     session: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
+    _: set[str] = Depends(require_roles("attendee", "organizer", "admin")),
 ) -> None:
     service = RegistrationService(RegistrationRepository(session), EventRepository(session))
     service.cancel(user_id=current_user.id, event_id=event_id)
@@ -58,6 +60,7 @@ def cancel_registration(
 def my_registrations(
     session: Session = Depends(get_db_session),
     current_user: User = Depends(get_current_user),
+    _: set[str] = Depends(require_roles("attendee", "organizer", "admin")),
 ) -> MyRegistrationsResponse:
     service = RegistrationService(RegistrationRepository(session), EventRepository(session))
     items = service.my_registrations(user_id=current_user.id)

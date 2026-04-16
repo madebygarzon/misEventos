@@ -5,8 +5,12 @@ from sqlalchemy import engine_from_config, pool
 
 from app.core.config import settings
 from app.models.user import User  # noqa: F401
+from app.models.role import Role  # noqa: F401
+from app.models.user_role import UserRole  # noqa: F401
 from app.models.event import Event  # noqa: F401
 from app.models.session import EventSession  # noqa: F401
+from app.models.speaker import Speaker  # noqa: F401
+from app.models.session_speaker import SessionSpeaker  # noqa: F401
 from app.models.registration import Registration  # noqa: F401
 from sqlmodel import SQLModel
 

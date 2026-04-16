@@ -22,3 +22,4 @@ class UserResponse(BaseModel):
     email: EmailStr
     full_name: str
     is_active: bool
+    roles: list[str] = []

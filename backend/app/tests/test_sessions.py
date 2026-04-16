@@ -1,8 +1,27 @@
 from datetime import datetime, timedelta, timezone
 
+from sqlmodel import Session, select
+
+from app.models.role import Role
+from app.models.user import User
+from app.models.user_role import UserRole
 
 
-def _auth_headers(client, email: str) -> dict[str, str]:
+def _grant_role(session: Session, email: str, role_name: str) -> None:
+    user = session.exec(select(User).where(User.email == email)).first()
+    role = session.exec(select(Role).where(Role.name == role_name)).first()
+    if not user or not role:
+        return
+    existing = session.exec(
+        select(UserRole).where(UserRole.user_id == user.id, UserRole.role_id == role.id)
+    ).first()
+    if existing:
+        return
+    session.add(UserRole(user_id=user.id, role_id=role.id))
+    session.commit()
+
+
+def _auth_headers(client, email: str, session: Session | None = None, organizer: bool = False) -> dict[str, str]:
     register_payload = {
         "email": email,
         "password": "password123",
@@ -13,6 +32,8 @@ def _auth_headers(client, email: str) -> dict[str, str]:
         "/api/v1/auth/login",
         json={"email": email, "password": "password123"},
     )
+    if organizer and session:
+        _grant_role(session, email, "organizer")
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
@@ -52,8 +73,8 @@ def _create_event(client, headers: dict[str, str]) -> dict:
 
 
 
-def test_create_and_list_sessions(client):
-    headers = _auth_headers(client, "session_owner1@example.com")
+def test_create_and_list_sessions(client, session: Session):
+    headers = _auth_headers(client, "session_owner1@example.com", session, organizer=True)
     event = _create_event(client, headers)
 
     event_start = datetime.fromisoformat(event["start_date"])
@@ -74,8 +95,8 @@ def test_create_and_list_sessions(client):
 
 
 
-def test_create_session_requires_auth(client):
-    headers = _auth_headers(client, "session_owner2@example.com")
+def test_create_session_requires_auth(client, session: Session):
+    headers = _auth_headers(client, "session_owner2@example.com", session, organizer=True)
     event = _create_event(client, headers)
 
     event_start = datetime.fromisoformat(event["start_date"])
@@ -89,8 +110,8 @@ def test_create_session_requires_auth(client):
 
 
 
-def test_session_must_be_within_event_range(client):
-    headers = _auth_headers(client, "session_owner3@example.com")
+def test_session_must_be_within_event_range(client, session: Session):
+    headers = _auth_headers(client, "session_owner3@example.com", session, organizer=True)
     event = _create_event(client, headers)
 
     event_start = datetime.fromisoformat(event["start_date"])
@@ -105,8 +126,8 @@ def test_session_must_be_within_event_range(client):
 
 
 
-def test_update_and_delete_session_owner(client):
-    headers = _auth_headers(client, "session_owner4@example.com")
+def test_update_and_delete_session_owner(client, session: Session):
+    headers = _auth_headers(client, "session_owner4@example.com", session, organizer=True)
     event = _create_event(client, headers)
 
     event_start = datetime.fromisoformat(event["start_date"])
@@ -133,9 +154,9 @@ def test_update_and_delete_session_owner(client):
 
 
 
-def test_forbidden_session_update_non_owner(client):
-    owner_headers = _auth_headers(client, "session_owner5@example.com")
-    other_headers = _auth_headers(client, "session_other5@example.com")
+def test_forbidden_session_update_non_owner(client, session: Session):
+    owner_headers = _auth_headers(client, "session_owner5@example.com", session, organizer=True)
+    other_headers = _auth_headers(client, "session_other5@example.com", session, organizer=True)
     event = _create_event(client, owner_headers)
 
     event_start = datetime.fromisoformat(event["start_date"])
