@@ -39,7 +39,7 @@ export function ManualPage() {
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-semibold">Usuarios de prueba para reclutador</h2>
+        <h2 className="text-lg font-semibold">Usuarios de pruebas de flujo</h2>
         <p className="muted">
           Usa estas credenciales para validar permisos por rol y flujos principales del sistema.
         </p>
