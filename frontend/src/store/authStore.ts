@@ -4,6 +4,12 @@ import { loginRequest, meRequest, registerRequest } from "../api/auth";
 import type { AuthUser } from "../types/auth";
 import { getErrorMessage } from "../utils/errors";
 
+function normalizeAuthErrorMessage(message: string): string {
+  const value = message.trim().toLowerCase();
+  if (value === "invalid credentials") return "Credenciales incorrectas";
+  return message;
+}
+
 type AuthState = {
   user: AuthUser | null;
   token: string | null;
@@ -47,7 +53,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       set({ user: me, token: data.access_token, isAuthenticated: true, loading: false });
       return true;
     } catch (error: any) {
-      set({ error: getErrorMessage(error, "Credenciales inválidas"), loading: false });
+      const message = getErrorMessage(error, "Credenciales incorrectas");
+      set({ error: normalizeAuthErrorMessage(message), loading: false });
       return false;
     }
   },

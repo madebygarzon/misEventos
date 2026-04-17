@@ -4,27 +4,27 @@ type TestUser = {
   fullName: string;
   email: string;
   password: string;
-  role: "admin" | "organizer" | "attendee";
+  role: "Administrador" | "Organizador" | "Asistente";
 };
 
 const TEST_USERS: TestUser[] = [
   {
-    fullName: "Admin Principal",
+    fullName: "Carlos Garzon C",
     email: "madebygarzon@gmail.com",
     password: "password123",
-    role: "admin"
+    role: "Administrador"
   },
   {
-    fullName: "Organizador Demo",
-    email: "organizer.demo@miseventos.com",
+    fullName: "Yuliana Sosa Aguirre",
+    email: "ysosa@gmail.com",
     password: "password123",
-    role: "organizer"
+    role: "Organizador"
   },
   {
-    fullName: "Asistente Demo",
-    email: "attendee.demo@miseventos.com",
+    fullName: "Juan Jose Urrego",
+    email: "jsosa@gmail.com",
     password: "password123",
-    role: "attendee"
+    role: "Asistente"
   }
 ];
 
@@ -45,7 +45,7 @@ export function ManualPage() {
         </p>
 
         <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[760px] text-left text-sm">
+          <table className="w-full min-w-190 text-left text-sm">
             <thead className="bg-muted/40">
               <tr>
                 <th className="px-4 py-3 font-semibold">Nombre</th>
@@ -85,6 +85,7 @@ export function ManualPage() {
               <li>Ingresa a Inicio y puede ver el listado de eventos públicos.</li>
               <li>Usa búsqueda y navegación para revisar eventos y su detalle.</li>
               <li>Si intenta acciones privadas (inscribirse), debe iniciar sesión o registrarse.</li>
+              <li>Un usuario no logueado puede consultar si es oferente en alguna sesión.</li>
             </ol>
           </article>
 

@@ -83,10 +83,10 @@ export function EventsListPage() {
         <div className="mb-10 items-center align-middle text-center">
           <CardTitle className="text-[35px] text-[#2e2e2e] md:text-[43px]">
             {isAuthenticated
-              ? `!Bienvenido ${user?.full_name || user?.email || "Usuario"}!`
-              : "!Bienvenido!"}
+              ? `¡Bienvenido ${user?.full_name || user?.email || "Usuario"}!`
+              : "¡Bienvenido!"}
           </CardTitle>
-          <CardDescription className="muted text-[20px]">Sistema de gestion de eventos: Mis Eventos</CardDescription>
+          <CardDescription className="muted text-[20px]">Al sistema de gestion de eventos: Mis Eventos</CardDescription>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
             <Button asChild className="w-fit">
               <Link to="/events">Ver todos los eventos</Link>

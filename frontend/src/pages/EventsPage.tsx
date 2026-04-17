@@ -129,7 +129,7 @@ export function EventsPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {events.map((event) => (
-          <Card key={event.id}>
+          <Card key={event.id} className="overflow-hidden pt-0">
             <EventFeaturedImage
               name={event.name}
               alt={event.featured_image_alt}

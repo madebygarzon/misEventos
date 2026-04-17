@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { listEventsRequest } from "@/api/events";
@@ -27,8 +27,14 @@ export function OffererPage() {
   const [query, setQuery] = useState("");
   const [matches, setMatches] = useState<OffererMatch[]>([]);
   const [loading, setLoading] = useState(false);
+  const [bootstrapping, setBootstrapping] = useState(true);
   const [searched, setSearched] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setBootstrapping(false), 550);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const onSearch = async () => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -42,6 +48,7 @@ export function OffererPage() {
     }
 
     setLoading(true);
+    const startTs = Date.now();
     try {
       const firstPage = await listEventsRequest({ page: 1, limit: 100 });
       const pendingPages = [];
@@ -99,6 +106,10 @@ export function OffererPage() {
       setMatches([]);
       await notifyError(message);
     } finally {
+      const elapsed = Date.now() - startTs;
+      if (elapsed < 500) {
+        await new Promise((resolve) => window.setTimeout(resolve, 500 - elapsed));
+      }
       setLoading(false);
     }
   };
@@ -146,40 +157,40 @@ export function OffererPage() {
             </Button>
           </div>
 
-          {loading && (
+          {(bootstrapping || loading) && (
             <div className="mt-4 grid gap-4 md:grid-cols-2">
               {Array.from({ length: 4 }).map((_, index) => (
                 <Card key={`offerer-loading-skeleton-${index}`}>
                   <CardHeader>
-                    <Skeleton className="h-6 w-3/4" />
-                    <Skeleton className="h-4 w-1/2" />
+                    <Skeleton className="h-6 w-3/4 bg-muted-foreground/20" />
+                    <Skeleton className="h-4 w-1/2 bg-muted-foreground/20" />
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full bg-muted-foreground/20" />
+                    <Skeleton className="h-16 w-full bg-muted-foreground/20" />
                   </CardContent>
                   <CardFooter>
-                    <Skeleton className="h-9 w-24" />
+                    <Skeleton className="h-9 w-24 bg-muted-foreground/20" />
                   </CardFooter>
                 </Card>
               ))}
             </div>
           )}
-          {!loading && error && <p className="error mt-4">{error}</p>}
+          {!bootstrapping && !loading && error && <p className="error mt-4">{error}</p>}
 
-          {!loading && searched && !matches.length && !error && (
+          {!bootstrapping && !loading && searched && !matches.length && !error && (
             <div className="mt-4 space-y-3">
               <p className="muted">No hay resultados para la búsqueda actual.</p>
               <div className="grid gap-4 md:grid-cols-2">
                 {Array.from({ length: 2 }).map((_, index) => (
                   <Card key={`offerer-empty-skeleton-${index}`}>
                     <CardHeader>
-                      <Skeleton className="h-6 w-2/3" />
-                      <Skeleton className="h-4 w-1/2" />
+                      <Skeleton className="h-6 w-2/3 bg-muted-foreground/20" />
+                      <Skeleton className="h-4 w-1/2 bg-muted-foreground/20" />
                     </CardHeader>
                     <CardContent className="space-y-2">
-                      <Skeleton className="h-14 w-full" />
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-14 w-full bg-muted-foreground/20" />
+                      <Skeleton className="h-14 w-full bg-muted-foreground/20" />
                     </CardContent>
                   </Card>
                 ))}
@@ -187,10 +198,10 @@ export function OffererPage() {
             </div>
           )}
 
-          {!loading && !!matches.length && (
+          {!bootstrapping && !loading && !!matches.length && (
             <div className="mt-5 grid gap-4">
               {matches.map((row) => (
-                <Card key={row.eventId}>
+                <Card className="mb-4" key={row.eventId}>
                   <CardHeader>
                     <CardTitle>{row.eventName}</CardTitle>
                     <CardDescription>
@@ -207,7 +218,7 @@ export function OffererPage() {
                       </div>
                     ))}
                   </CardContent>
-                  <CardFooter>
+                  <CardFooter className="">
                     <Button asChild variant="outline" size="sm">
                       <Link to={`/events/${row.eventId}`}>Ver evento</Link>
                     </Button>

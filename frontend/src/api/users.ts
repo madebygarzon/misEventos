@@ -10,3 +10,12 @@ export const updateUserRoleRequest = async (userId: string, role: ManagedRole): 
   const { data } = await api.patch<ManagedUser>(`/users/${userId}/role`, { role });
   return data;
 };
+
+export const updateMyProfileRequest = async (payload: {
+  full_name?: string;
+  current_password?: string;
+  new_password?: string;
+}): Promise<ManagedUser> => {
+  const { data } = await api.patch<ManagedUser>("/users/me", payload);
+  return data;
+};

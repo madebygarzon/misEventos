@@ -25,3 +25,9 @@ class UserRepository:
     def list_all(self) -> list[User]:
         statement = select(User).order_by(User.created_at.desc())
         return list(self.session.exec(statement).all())
+
+    def update(self, user: User) -> User:
+        self.session.add(user)
+        self.session.commit()
+        self.session.refresh(user)
+        return user

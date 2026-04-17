@@ -623,6 +623,9 @@ export function EventDetailPage() {
                   Rango: {new Date(currentEvent.start_date).toLocaleString()} -{" "}
                   {new Date(currentEvent.end_date).toLocaleString()}
                 </CardDescription>
+                <p className="text-sm">
+                  <strong>Organizador del evento:</strong> {currentEvent.organizer_name || "No disponible"}
+                </p>
                 <p className="muted">{currentEvent.location || "Sin ubicación"}</p>
               </div>
 
@@ -639,7 +642,7 @@ export function EventDetailPage() {
                 <p className="text-sm"><strong>Capacidad:</strong> {currentEvent.capacity}</p>
                 <p className="text-sm"><strong>Sesiones:</strong> {sessions.length}</p>
                 <div className="space-y-2">
-                  <p className="text-sm font-medium">Datos de las sesiones</p>
+                  <p className="text-sm font-medium">Datos de las sesiones:</p>
                   {!sessions.length && (
                     <p className="muted">Este evento no tiene sesiones registradas todavía.</p>
                   )}
@@ -875,9 +878,9 @@ export function EventDetailPage() {
 
             <div className="space-y-2 font-extrabold border-t border-border pt-5">
               {!isAuthenticated && (
-                <p className="inline-flex w-fit rounded-full border border-border bg-muted px-3 py-1 text-sm font-semibold">
-                  Inicia sesión para poder inscribirte al evento.
-                </p>
+                <Button asChild variant="outline" size="sm" className="w-fit">
+                  <Link to="/login">Inicia sesión para poder inscribirte al evento.</Link>
+                </Button>
               )}
               {regMessage && <p className="success">{regMessage}</p>}
               {regError && <p className="error">{regError}</p>}
