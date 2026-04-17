@@ -33,3 +33,16 @@ export type SessionSpeakerItem = {
 export type SessionSpeakerAssignPayload = {
   role_in_session?: string | null;
 };
+
+export type EventSpeakerItem = {
+  id: string;
+  event_id: string;
+  speaker_id: string;
+  assigned_at: string;
+  role_in_event: string | null;
+  speaker: SpeakerItem;
+};
+
+export type EventSpeakerAssignPayload = {
+  role_in_event?: string | null;
+};

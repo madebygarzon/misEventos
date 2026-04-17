@@ -153,3 +153,52 @@ def test_forbidden_assign_speaker_by_non_owner(client, session: Session):
         headers=other_headers,
     )
     assert forbidden.status_code == 403
+
+
+def test_assign_and_remove_speaker_from_event(client, session: Session):
+    headers = _auth_headers(client, "speaker_owner4@example.com", session, organizer=True)
+
+    event = client.post("/api/v1/events", json=_event_payload(), headers=headers).json()
+    speaker = client.post(
+        "/api/v1/speakers",
+        json={"full_name": "Margaret Hamilton", "email": "margaret@example.com"},
+        headers=headers,
+    ).json()
+
+    assigned = client.post(
+        f"/api/v1/events/{event['id']}/speakers/{speaker['id']}",
+        json={"role_in_event": "Mentora principal"},
+        headers=headers,
+    )
+    assert assigned.status_code == 201
+    assert assigned.json()["speaker"]["full_name"] == "Margaret Hamilton"
+    assert assigned.json()["role_in_event"] == "Mentora principal"
+
+    listing = client.get(f"/api/v1/events/{event['id']}/speakers")
+    assert listing.status_code == 200
+    assert len(listing.json()) == 1
+
+    removed = client.delete(
+        f"/api/v1/events/{event['id']}/speakers/{speaker['id']}",
+        headers=headers,
+    )
+    assert removed.status_code == 204
+
+
+def test_forbidden_assign_event_speaker_by_non_owner(client, session: Session):
+    owner_headers = _auth_headers(client, "speaker_owner5@example.com", session, organizer=True)
+    other_headers = _auth_headers(client, "speaker_other5@example.com", session, organizer=True)
+
+    event = client.post("/api/v1/events", json=_event_payload(), headers=owner_headers).json()
+    speaker = client.post(
+        "/api/v1/speakers",
+        json={"full_name": "Donald Knuth"},
+        headers=owner_headers,
+    ).json()
+
+    forbidden = client.post(
+        f"/api/v1/events/{event['id']}/speakers/{speaker['id']}",
+        json={},
+        headers=other_headers,
+    )
+    assert forbidden.status_code == 403

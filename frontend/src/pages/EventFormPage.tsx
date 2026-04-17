@@ -1,7 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import { uploadEventFeaturedImageRequest } from "@/api/uploads";
+import { EventFeaturedImage } from "@/components/EventFeaturedImage";
+import { SectionSpinner } from "@/components/SectionSpinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -147,7 +149,7 @@ export function EventFormPage() {
 
   return (
     <div className="container">
-      <h1>{isEdit ? "Editar evento" : "Crear evento"}</h1>
+      <h1 className="my-6">{isEdit ? "Editar evento" : "Crear evento"}</h1>
       {!canManageEvents && (
         <Card>
           <CardContent className="pt-4">
@@ -164,106 +166,137 @@ export function EventFormPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-3" onSubmit={onSubmit}>
-              <Input
-                placeholder="Nombre"
-                value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                required
-              />
-              <Textarea
-                placeholder="Descripción"
-                value={form.description}
-                onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
-              />
-              <Input
-                placeholder="Ubicación"
-                value={form.location}
-                onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-              />
-              <div className="grid gap-2">
-                <label className="grid gap-1 text-sm">
-                  <span className="muted">Texto alternativo imagen destacada</span>
-                  <Input
-                    placeholder="Describe la imagen para accesibilidad"
-                    value={form.featured_image_alt}
-                    onChange={(e) => setForm((prev) => ({ ...prev, featured_image_alt: e.target.value }))}
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="muted">
-                    Imagen destacada (se optimiza automáticamente a WebP sm/md/lg)
-                  </span>
-                  <Input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    onChange={(e) => onImageSelected(e.target.files?.[0] || null)}
-                    disabled={uploadingImage}
-                  />
-                </label>
-                {uploadingImage && <p className="muted">Procesando y comprimiendo imagen...</p>}
-                {uploadError && <p className="error">{uploadError}</p>}
-                {(form.featured_image_md_url || form.featured_image_lg_url || form.featured_image_sm_url) && (
-                  <div className="grid gap-2">
-                    <img
-                      src={form.featured_image_md_url || form.featured_image_lg_url || form.featured_image_sm_url}
-                      alt={form.featured_image_alt || "Vista previa imagen destacada"}
-                      className="max-h-60 w-full rounded-lg border border-border object-cover"
+            <form className="grid gap-5" onSubmit={onSubmit}>
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="space-y-3">
+                  {(form.featured_image_md_url || form.featured_image_lg_url || form.featured_image_sm_url) ? (
+                    <EventFeaturedImage
+                      name={form.name || "evento"}
+                      alt={form.featured_image_alt}
+                      smUrl={form.featured_image_sm_url}
+                      mdUrl={form.featured_image_md_url}
+                      lgUrl={form.featured_image_lg_url}
+                      className="h-72 w-full rounded-xl border border-border object-cover lg:h-[22rem]"
+                      sizes="(max-width: 1024px) 100vw, 50vw"
                     />
-                    <Button type="button" variant="outline" onClick={onRemoveImage} className="w-fit">
-                      Quitar imagen
-                    </Button>
+                  ) : (
+                    <div className="flex h-72 w-full items-center justify-center rounded-xl border border-dashed border-border bg-muted/20 text-sm text-muted-foreground lg:h-[22rem]">
+                      Aún no hay imagen destacada
+                    </div>
+                  )}
+                  <label className="grid gap-1 text-sm">
+                    <span className="mt-2 muted">Texto alternativo imagen destacada</span>
+                    <Input
+                      placeholder="Describe la imagen para accesibilidad"
+                      value={form.featured_image_alt}
+                      onChange={(e) => setForm((prev) => ({ ...prev, featured_image_alt: e.target.value }))}
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="muted">
+                      Imagen destacada (se optimiza automáticamente a WebP sm/md/lg)
+                    </span>
+                    <Input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      onChange={(e) => onImageSelected(e.target.files?.[0] || null)}
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  {uploadingImage && <SectionSpinner label="Procesando y comprimiendo imagen..." className="py-1" />}
+                  {uploadError && <p className="error">{uploadError}</p>}
+                  {(form.featured_image_md_url || form.featured_image_lg_url || form.featured_image_sm_url) && (
+                    <div className="actions">
+                      <Button type="button" variant="outline" onClick={onRemoveImage} className="w-fit">
+                        Quitar imagen
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+                  <label className="grid gap-1 text-sm">
+                    <span className="muted">Nombre del evento</span>
+                    <Input
+                      placeholder="Nombre"
+                      value={form.name}
+                      onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                      required
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm">
+                    <span className="muted">Ubicación</span>
+                    <Input
+                      placeholder="Ubicación"
+                      value={form.location}
+                      onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
+                    />
+                  </label>
+                  <div className="grid grid-2">
+                    <label className="grid gap-1 text-sm">
+                      <span className="muted">Capacidad</span>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={form.capacity}
+                        onChange={(e) => setForm((prev) => ({ ...prev, capacity: Number(e.target.value) }))}
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm">
+                      <span className="muted">Estado</span>
+                      <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
+                        <option value="draft">{eventStatusLabel("draft")}</option>
+                        <option value="published">{eventStatusLabel("published")}</option>
+                        <option value="cancelled">{eventStatusLabel("cancelled")}</option>
+                        <option value="finished">{eventStatusLabel("finished")}</option>
+                      </select>
+                    </label>
                   </div>
-                )}
+                  <div className="grid grid-2">
+                    <label className="grid gap-1 text-sm">
+                      <span className="muted">Inicio</span>
+                      <Input
+                        type="datetime-local"
+                        value={form.start_date}
+                        onChange={(e) => setForm((prev) => ({ ...prev, start_date: e.target.value }))}
+                        required
+                      />
+                    </label>
+                    <label className="grid gap-1 text-sm">
+                      <span className="muted">Fin</span>
+                      <Input
+                        type="datetime-local"
+                        value={form.end_date}
+                        onChange={(e) => setForm((prev) => ({ ...prev, end_date: e.target.value }))}
+                        required
+                      />
+                    </label>
+                  </div>
+                </div>
               </div>
 
-              <div className="grid grid-2">
+              <div className="space-y-2 border-t border-border pt-4">
                 <label className="grid gap-1 text-sm">
-                  <span className="muted">Inicio</span>
-                  <Input
-                    type="datetime-local"
-                    value={form.start_date}
-                    onChange={(e) => setForm((prev) => ({ ...prev, start_date: e.target.value }))}
-                    required
+                  <span className="muted">Descripción</span>
+                  <Textarea
+                    placeholder="Descripción"
+                    value={form.description}
+                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
+                    rows={4}
                   />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="muted">Fin</span>
-                  <Input
-                    type="datetime-local"
-                    value={form.end_date}
-                    onChange={(e) => setForm((prev) => ({ ...prev, end_date: e.target.value }))}
-                    required
-                  />
-                </label>
-              </div>
-
-              <div className="grid grid-2">
-                <label className="grid gap-1 text-sm">
-                  <span className="muted">Capacidad</span>
-                  <Input
-                    type="number"
-                    min={1}
-                    value={form.capacity}
-                    onChange={(e) => setForm((prev) => ({ ...prev, capacity: Number(e.target.value) }))}
-                    required
-                  />
-                </label>
-                <label className="grid gap-1 text-sm">
-                  <span className="muted">Estado</span>
-                  <select value={form.status} onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value }))}>
-                    <option value="draft">{eventStatusLabel("draft")}</option>
-                    <option value="published">{eventStatusLabel("published")}</option>
-                    <option value="cancelled">{eventStatusLabel("cancelled")}</option>
-                    <option value="finished">{eventStatusLabel("finished")}</option>
-                  </select>
                 </label>
               </div>
 
-              <div className="actions">
+              <div className="actions border-t border-border pt-4">
                 <Button disabled={loading} type="submit">
                   {isEdit ? "Guardar cambios" : "Crear evento"}
                 </Button>
+                {isEdit && id && (
+                  <Button type="button" variant="outline">
+                    <Link to={`/events/${id}`}>Volver a vista individual</Link>
+                  </Button>
+                )}
               </div>
               {success && <p className="success">{success}</p>}
               {error && <p className="error">{error}</p>}

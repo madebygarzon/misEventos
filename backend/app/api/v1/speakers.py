@@ -1,15 +1,18 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlmodel import Session
 
 from app.api.deps import get_current_user, get_db_session, require_roles
 from app.models.user import User
+from app.repositories.event_speaker_repository import EventSpeakerRepository
 from app.repositories.event_repository import EventRepository
 from app.repositories.session_repository import SessionRepository
 from app.repositories.session_speaker_repository import SessionSpeakerRepository
 from app.repositories.speaker_repository import SpeakerRepository
 from app.schemas.speaker import (
+    EventSpeakerAssign,
+    EventSpeakerResponse,
     SessionSpeakerAssign,
     SessionSpeakerResponse,
     SpeakerCreate,
@@ -47,9 +50,21 @@ def _session_speaker_response(item, speaker) -> SessionSpeakerResponse:
     )
 
 
+def _event_speaker_response(item, speaker) -> EventSpeakerResponse:
+    return EventSpeakerResponse(
+        id=str(item.id),
+        event_id=str(item.event_id),
+        speaker_id=str(item.speaker_id),
+        assigned_at=item.assigned_at,
+        role_in_event=item.role_in_event,
+        speaker=_speaker_response(speaker),
+    )
+
+
 def _service(session: Session) -> SpeakerService:
     return SpeakerService(
         SpeakerRepository(session),
+        EventSpeakerRepository(session),
         SessionSpeakerRepository(session),
         SessionRepository(session),
         EventRepository(session),
@@ -152,4 +167,55 @@ def remove_speaker_from_session(
         speaker_id=speaker_id,
         current_user_id=current_user.id,
         is_admin="admin" in role_names,
+    )
+
+
+@router.get("/events/{event_id}/speakers", response_model=list[EventSpeakerResponse])
+def list_event_speakers(event_id: UUID, session: Session = Depends(get_db_session)) -> list[EventSpeakerResponse]:
+    _ = session
+    _ = event_id
+    return []
+
+
+@router.post(
+    "/events/{event_id}/speakers/{speaker_id}",
+    response_model=EventSpeakerResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def assign_speaker_to_event(
+    event_id: UUID,
+    speaker_id: UUID,
+    payload: EventSpeakerAssign,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+    role_names: set[str] = Depends(require_roles("organizer", "admin")),
+) -> EventSpeakerResponse:
+    _ = session
+    _ = event_id
+    _ = speaker_id
+    _ = payload
+    _ = current_user
+    _ = role_names
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Speaker can only be assigned to a session, not directly to an event.",
+    )
+
+
+@router.delete("/events/{event_id}/speakers/{speaker_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove_speaker_from_event(
+    event_id: UUID,
+    speaker_id: UUID,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+    role_names: set[str] = Depends(require_roles("organizer", "admin")),
+) -> None:
+    _ = session
+    _ = event_id
+    _ = speaker_id
+    _ = current_user
+    _ = role_names
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail="Speaker can only be assigned to a session, not directly to an event.",
     )

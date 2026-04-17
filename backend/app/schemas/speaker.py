@@ -40,10 +40,23 @@ class SessionSpeakerAssign(BaseModel):
     role_in_session: str | None = Field(default=None, max_length=128)
 
 
+class EventSpeakerAssign(BaseModel):
+    role_in_event: str | None = Field(default=None, max_length=128)
+
+
 class SessionSpeakerResponse(BaseModel):
     id: str
     session_id: str
     speaker_id: str
     assigned_at: datetime
     role_in_session: str | None
+    speaker: SpeakerResponse
+
+
+class EventSpeakerResponse(BaseModel):
+    id: str
+    event_id: str
+    speaker_id: str
+    assigned_at: datetime
+    role_in_event: str | None
     speaker: SpeakerResponse

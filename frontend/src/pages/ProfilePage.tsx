@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 
+import { SectionSpinner } from "@/components/SectionSpinner";
 import {
   Card,
   CardContent,
@@ -229,7 +230,7 @@ export function ProfilePage() {
             <CardTitle>Eventos organizados por mí</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-          {organizedLoading && <p className="muted">Cargando eventos organizados...</p>}
+          {organizedLoading && <SectionSpinner label="Cargando eventos organizados..." />}
           {organizedError && <p className="error">{organizedError}</p>}
           {!organizedLoading && !organizedEvents.length && (
             <p className="muted">Aún no tengo eventos organizados.</p>
@@ -255,8 +256,8 @@ export function ProfilePage() {
           <CardDescription>Historial de tus registros y detalle de organizador/ponentes.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {loading && <p className="muted">Cargando...</p>}
-          {!loading && detailsLoading && <p className="muted">Cargando detalle de eventos...</p>}
+          {loading && <SectionSpinner label="Cargando..." />}
+          {!loading && detailsLoading && <SectionSpinner label="Cargando detalle de eventos..." />}
           {error && <p className="error">{error}</p>}
           {!loading && !items.length && <p className="muted">No tengo inscripciones todavía.</p>}
           {items.map((item) => (
@@ -288,7 +289,7 @@ export function ProfilePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-          {usersLoading && <p className="muted">Cargando usuarios...</p>}
+          {usersLoading && <SectionSpinner label="Cargando usuarios..." />}
           {usersError && <p className="error">{usersError}</p>}
           {roleSuccess && <p className="success">{roleSuccess}</p>}
           {!usersLoading && !visibleUsers.length && <p className="muted">No hay usuarios para mostrar.</p>}

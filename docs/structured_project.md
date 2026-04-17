@@ -69,6 +69,32 @@ Desde perfil, el admin también puede gestionar usuarios y cambiar su rol.
 - el admin principal configurado (`madebygarzon@gmail.com`) no puede perder rol `admin`.
 
 ---
+## Backlog de métricas (tareas a realizar)
+
+Estas tareas describen los indicadores que debo implementar o fortalecer en el módulo de métricas del frontend/backend.
+
+- [ ] Implementar métrica de total de eventos creados por período.
+- [ ] Implementar métrica de eventos por estado (`draft`, `published`, `cancelled`, `finished`).
+- [ ] Implementar tasa de publicación (`eventos publicados / eventos creados`).
+- [ ] Implementar capacidad total vs cupos ocupados por evento.
+- [ ] Implementar tasa de ocupación por evento (`inscritos / capacidad`).
+- [ ] Implementar ranking de eventos con mayor número de inscripciones.
+- [ ] Implementar métrica de velocidad de inscripción (tiempo hasta completar cupos).
+- [ ] Implementar serie temporal de inscripciones por día/semana/mes.
+- [ ] Implementar tasa de cancelación de inscripciones.
+- [ ] Implementar no-show rate (`inscritos vs asistentes`) cuando exista registro de asistencia.
+- [ ] Implementar promedio y distribución de sesiones por evento.
+- [ ] Implementar sesiones por estado (`scheduled`, `in_progress`, `finished`, `cancelled`).
+- [ ] Implementar promedio de ponentes por sesión.
+- [ ] Implementar ranking de ponentes más activos (más sesiones asignadas).
+- [ ] Implementar ranking de organizadores más activos (más eventos creados).
+- [ ] Implementar conversión de detalle a inscripción (`vista detalle -> registro`), si se captura analítica de vistas.
+- [ ] Implementar tiempo promedio entre creación del evento y fecha de inicio.
+- [ ] Implementar alerta de eventos sin sesiones asociadas.
+- [ ] Implementar alerta de eventos con baja ocupación (ejemplo: menor a 30%).
+- [ ] Implementar retención de usuarios (`usuarios inscritos en más de un evento`).
+
+---
 ### Modelo base de datos
 
 ```mermaid
@@ -79,6 +105,8 @@ erDiagram
     EVENTS ||--o{ REGISTRATIONS : has
     SESSIONS ||--o{ SESSION_SPEAKERS : links
     SPEAKERS ||--o{ SESSION_SPEAKERS : assigned
+    EVENTS ||--o{ EVENT_SPEAKERS : links
+    SPEAKERS ||--o{ EVENT_SPEAKERS : assigned
     USERS ||--o{ USER_ROLES : has
     ROLES ||--o{ USER_ROLES : grants
 
@@ -98,6 +126,10 @@ erDiagram
       string name
       text description
       string location
+      string featured_image_sm_url
+      string featured_image_md_url
+      string featured_image_lg_url
+      string featured_image_alt
       timestamp start_date
       timestamp end_date
       int capacity
@@ -140,6 +172,14 @@ erDiagram
       string role_in_session
     }
 
+    EVENT_SPEAKERS {
+      uuid id PK
+      uuid event_id FK
+      uuid speaker_id FK
+      timestamp assigned_at
+      string role_in_event
+    }
+
     REGISTRATIONS {
       uuid id PK
       uuid user_id FK
@@ -164,6 +204,9 @@ erDiagram
     }
 ```
 
+> Nota de negocio vigente: el flujo activo usa ponentes por sesión (`session_speakers`).  
+> La tabla `event_speakers` existe por evolución de esquema, pero la asociación global de ponentes a evento está deshabilitada en la lógica actual.
+
 #### Reglas de integridad
 
 - `users.email` único.
@@ -178,6 +221,7 @@ erDiagram
 - sesión dentro del rango del evento.
 - `registrations` único por `(user_id, event_id)`.
 - `session_speakers` único por `(session_id, speaker_id)`.
+- `event_speakers` único por `(event_id, speaker_id)`.
 - `roles.name` único.
 - `user_roles` único por `(user_id, role_id)`.
 - `speakers` no depende de `users` (ponente no necesita cuenta).
@@ -197,6 +241,8 @@ erDiagram
 - `speakers(email)`.
 - `session_speakers(session_id)`.
 - `session_speakers(speaker_id)`.
+- `event_speakers(event_id)`.
+- `event_speakers(speaker_id)`.
 
 ---
 ### Arquitectura para esta entrega
@@ -507,8 +553,3 @@ Considero una parte terminada cuando:
 ### Cierre
 
 Mi objetivo es entregar un MVP sólido, coherente y profesional, sin meter complejidad que no aporte a esta prueba tecnica.
-
----
-### Mayor detalle documental en Notion
-
-https://www.notion.so/Mis-Eventos-343ec673830580cabb86e1c423ef8424?source=copy_link

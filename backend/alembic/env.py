@@ -10,6 +10,7 @@ from app.models.user_role import UserRole  # noqa: F401
 from app.models.event import Event  # noqa: F401
 from app.models.session import EventSession  # noqa: F401
 from app.models.speaker import Speaker  # noqa: F401
+from app.models.event_speaker import EventSpeaker  # noqa: F401
 from app.models.session_speaker import SessionSpeaker  # noqa: F401
 from app.models.registration import Registration  # noqa: F401
 from sqlmodel import SQLModel

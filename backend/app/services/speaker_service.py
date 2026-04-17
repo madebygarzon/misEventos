@@ -3,24 +3,28 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 
+from app.models.event_speaker import EventSpeaker
 from app.models.session_speaker import SessionSpeaker
 from app.models.speaker import Speaker
+from app.repositories.event_speaker_repository import EventSpeakerRepository
 from app.repositories.event_repository import EventRepository
 from app.repositories.session_repository import SessionRepository
 from app.repositories.session_speaker_repository import SessionSpeakerRepository
 from app.repositories.speaker_repository import SpeakerRepository
-from app.schemas.speaker import SessionSpeakerAssign, SpeakerCreate, SpeakerUpdate
+from app.schemas.speaker import EventSpeakerAssign, SessionSpeakerAssign, SpeakerCreate, SpeakerUpdate
 
 
 class SpeakerService:
     def __init__(
         self,
         speaker_repository: SpeakerRepository,
+        event_speaker_repository: EventSpeakerRepository,
         session_speaker_repository: SessionSpeakerRepository,
         session_repository: SessionRepository,
         event_repository: EventRepository,
     ):
         self.speaker_repository = speaker_repository
+        self.event_speaker_repository = event_speaker_repository
         self.session_speaker_repository = session_speaker_repository
         self.session_repository = session_repository
         self.event_repository = event_repository
@@ -40,6 +44,13 @@ class SpeakerService:
     def _ensure_can_manage_session(self, session_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
         event_session = self._get_session_or_404(session_id)
         event = self.event_repository.get_by_id(event_session.event_id)
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+        if not is_admin and event.organizer_id != current_user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+
+    def _ensure_can_manage_event(self, event_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
+        event = self.event_repository.get_by_id(event_id)
         if not event:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
         if not is_admin and event.organizer_id != current_user_id:
@@ -111,6 +122,59 @@ class SpeakerService:
         self._get_session_or_404(session_id)
         items = self.session_speaker_repository.list_by_session(session_id)
         result: list[tuple[SessionSpeaker, Speaker]] = []
+        for item in items:
+            speaker = self.speaker_repository.get_by_id(item.speaker_id)
+            if speaker:
+                result.append((item, speaker))
+        return result
+
+    def assign_speaker_to_event(
+        self,
+        event_id: UUID,
+        speaker_id: UUID,
+        payload: EventSpeakerAssign,
+        current_user_id: UUID,
+        is_admin: bool = False,
+    ) -> EventSpeaker:
+        self._ensure_can_manage_event(event_id, current_user_id, is_admin=is_admin)
+        self._get_speaker_or_404(speaker_id)
+
+        existing = self.event_speaker_repository.get_by_event_speaker(event_id, speaker_id)
+        if existing:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Speaker already assigned to this event",
+            )
+
+        item = EventSpeaker(
+            event_id=event_id,
+            speaker_id=speaker_id,
+            role_in_event=payload.role_in_event,
+        )
+        return self.event_speaker_repository.create(item)
+
+    def remove_speaker_from_event(
+        self,
+        event_id: UUID,
+        speaker_id: UUID,
+        current_user_id: UUID,
+        is_admin: bool = False,
+    ) -> None:
+        self._ensure_can_manage_event(event_id, current_user_id, is_admin=is_admin)
+
+        existing = self.event_speaker_repository.get_by_event_speaker(event_id, speaker_id)
+        if not existing:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Speaker assignment not found")
+
+        self.event_speaker_repository.delete(existing)
+
+    def list_event_speakers(self, event_id: UUID) -> list[tuple[EventSpeaker, Speaker]]:
+        event = self.event_repository.get_by_id(event_id)
+        if not event:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Event not found")
+
+        items = self.event_speaker_repository.list_by_event(event_id)
+        result: list[tuple[EventSpeaker, Speaker]] = []
         for item in items:
             speaker = self.speaker_repository.get_by_id(item.speaker_id)
             if speaker:

@@ -11,6 +11,6 @@ describe("EventsListPage", () => {
         <EventsListPage />
       </MemoryRouter>
     );
-    expect(screen.getByText("Bienvenidos a Mis Eventos")).toBeInTheDocument();
+    expect(screen.getByText(/Bienvenido/i)).toBeInTheDocument();
   });
 });

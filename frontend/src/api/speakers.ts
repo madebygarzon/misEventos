@@ -1,5 +1,7 @@
 import { api } from "./client";
 import type {
+  EventSpeakerAssignPayload,
+  EventSpeakerItem,
   SessionSpeakerAssignPayload,
   SessionSpeakerItem,
   SpeakerCreatePayload,
@@ -34,4 +36,22 @@ export const assignSpeakerToSessionRequest = async (
 
 export const removeSpeakerFromSessionRequest = async (sessionId: string, speakerId: string): Promise<void> => {
   await api.delete(`/sessions/${sessionId}/speakers/${speakerId}`);
+};
+
+export const listEventSpeakersRequest = async (eventId: string): Promise<EventSpeakerItem[]> => {
+  const { data } = await api.get<EventSpeakerItem[]>(`/events/${eventId}/speakers`);
+  return data;
+};
+
+export const assignSpeakerToEventRequest = async (
+  eventId: string,
+  speakerId: string,
+  payload: EventSpeakerAssignPayload
+): Promise<EventSpeakerItem> => {
+  const { data } = await api.post<EventSpeakerItem>(`/events/${eventId}/speakers/${speakerId}`, payload);
+  return data;
+};
+
+export const removeSpeakerFromEventRequest = async (eventId: string, speakerId: string): Promise<void> => {
+  await api.delete(`/events/${eventId}/speakers/${speakerId}`);
 };

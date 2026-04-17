@@ -22,7 +22,7 @@ const buttonVariants = cva(
       },
       size: {
         default:
-          "h-auto gap-1.5 px-[20px] py-[10px] has-data-[icon=inline-end]:pr-[20px] has-data-[icon=inline-start]:pl-[20px]",
+          "h-auto cursor-pointer gap-1.5 px-[20px] py-[10px] has-data-[icon=inline-end]:pr-[20px] has-data-[icon=inline-start]:pl-[20px]",
         xs: "h-auto gap-1 text-xs px-[20px] py-[10px] has-data-[icon=inline-end]:pr-[20px] has-data-[icon=inline-start]:pl-[20px] [&_svg:not([class*='size-'])]:size-3",
         sm: "h-auto gap-1 text-[0.8rem] px-[20px] py-[10px] has-data-[icon=inline-end]:pr-[20px] has-data-[icon=inline-start]:pl-[20px] [&_svg:not([class*='size-'])]:size-3.5",
         lg: "h-auto gap-1.5 px-[20px] py-[10px] has-data-[icon=inline-end]:pr-[20px] has-data-[icon=inline-start]:pl-[20px]",
