@@ -1,8 +1,9 @@
 import type { ComponentType } from "react";
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { notifyError } from "@/utils/notifications";
@@ -21,7 +22,7 @@ export function LoginPage() {
   }, [error]);
 
   useEffect(() => {
-    fetch("/Login.json")
+    fetch("/Login (1).json")
       .then((response) => response.json())
       .then((data) => setLottieData(data))
       .catch(() => setLottieData(null));
@@ -46,55 +47,61 @@ export function LoginPage() {
   return (
     <div className="container">
       <h1 className="my-6">Iniciar sesión</h1>
-      <div className="mx-auto mt-8 grid w-full  grid-cols-1 items-center gap-6 lg:grid-cols-2">
-        <div className="w-full space-y-4">
-          <div>
-            
-            <p className="muted">Accede con tus credenciales para continuar.</p>
+      <Card className="mx-auto mt-8">
+        <CardContent className="pt-4">
+          <div className="grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-2">
+            <div className="w-full space-y-4">
+              <div>
+                <p className="muted text-xl mb-10">Accede con tus credenciales para continuar.</p>
+              </div>
+              <form onSubmit={onSubmit}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="login-email">Correo electrónico</FieldLabel>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      placeholder="ejemplo@correo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="login-password">Contraseña</FieldLabel>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      placeholder="Tu contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <FieldDescription>Mínimo 8 caracteres recomendados.</FieldDescription>
+                  </Field>
+
+                  <Button type="submit" disabled={loading}>
+                    Entrar
+                  </Button>
+                  <Button asChild type="button" variant="outline">
+                    <Link to="/register">No tengo cuenta</Link>
+                  </Button>
+                  <FieldError>{error}</FieldError>
+                </FieldGroup>
+              </form>
+            </div>
+
+            <div className="flex min-h-100 w-full items-center justify-center">
+              {lottieData && LottiePlayer ? (
+                <LottiePlayer animationData={lottieData} loop className="h-full w-full max-w-xl" />
+              ) : (
+                <p className="muted">No se pudo cargar la animación.</p>
+              )}
+            </div>
           </div>
-          <form onSubmit={onSubmit}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="login-email">Correo electrónico</FieldLabel>
-                <Input
-                  id="login-email"
-                  type="email"
-                  placeholder="ejemplo@correo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="login-password">Contraseña</FieldLabel>
-                <Input
-                  id="login-password"
-                  type="password"
-                  placeholder="Tu contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <FieldDescription>Mínimo 8 caracteres recomendados.</FieldDescription>
-              </Field>
-
-              <Button type="submit" disabled={loading}>
-                Entrar
-              </Button>
-              <FieldError>{error}</FieldError>
-            </FieldGroup>
-          </form>
-        </div>
-
-        <div className="flex min-h-100 w-full items-center justify-center">
-          {lottieData && LottiePlayer ? (
-            <LottiePlayer animationData={lottieData} loop className="h-full w-full max-w-xl" />
-          ) : (
-            <p className="muted">No se pudo cargar la animación.</p>
-          )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

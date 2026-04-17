@@ -21,6 +21,20 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger
+} from "@/components/ui/tooltip";
 import { notifyError, notifySuccess } from "@/utils/notifications";
 import { getEventRequest, listEventsRequest } from "../api/events";
 import { myRegistrationsRequest } from "../api/registrations";
@@ -34,7 +48,7 @@ import type { ManagedRole, ManagedUser } from "../types/user";
 import { getErrorMessage } from "../utils/errors";
 import { eventStatusLabel, registrationStatusLabel, roleLabel } from "../utils/labels";
 
-type ProfileSection = "personal" | "organized" | "scheduled" | "users";
+type ProfileSection = "personal" | "organized" | "scheduled" | "users" | "allEvents";
 
 export function ProfilePage() {
   const { user, fetchMe } = useAuthStore();
@@ -44,6 +58,13 @@ export function ProfilePage() {
     Record<string, { name: string; organizerName: string; speakers: string[] }>
   >({});
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [allEvents, setAllEvents] = useState<EventItem[]>([]);
+  const [allEventsLoading, setAllEventsLoading] = useState(false);
+  const [allEventsError, setAllEventsError] = useState<string | null>(null);
+  const [allEventsNameFilter, setAllEventsNameFilter] = useState("");
+  const [allEventsOrganizerFilter, setAllEventsOrganizerFilter] = useState("");
+  const [allEventsDateFilter, setAllEventsDateFilter] = useState("");
+  const [allEventsSortBy, setAllEventsSortBy] = useState<"name" | "date">("name");
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [organizedLoading, setOrganizedLoading] = useState(false);
@@ -82,6 +103,10 @@ export function ProfilePage() {
   useEffect(() => {
     if (usersError) notifyError(usersError);
   }, [usersError]);
+
+  useEffect(() => {
+    if (allEventsError) notifyError(allEventsError);
+  }, [allEventsError]);
 
   useEffect(() => {
     if (roleSuccess) notifySuccess(roleSuccess);
@@ -214,6 +239,39 @@ export function ProfilePage() {
     void run();
   }, [isAdmin]);
 
+  useEffect(() => {
+    if (!isAdmin) {
+      setAllEvents([]);
+      return;
+    }
+
+    const run = async () => {
+      setAllEventsLoading(true);
+      setAllEventsError(null);
+      try {
+        const limit = 100;
+        let currentPage = 1;
+        let totalPages = 1;
+        const collected: EventItem[] = [];
+
+        while (currentPage <= totalPages) {
+          const data = await listEventsRequest({ page: currentPage, limit });
+          collected.push(...data.items);
+          totalPages = data.pages || 1;
+          currentPage += 1;
+        }
+
+        setAllEvents(collected);
+      } catch (err: any) {
+        setAllEventsError(getErrorMessage(err, "No fue posible cargar todos los eventos."));
+      } finally {
+        setAllEventsLoading(false);
+      }
+    };
+
+    void run();
+  }, [isAdmin]);
+
   const getUserRole = (item: ManagedUser): ManagedRole => {
     if (item.roles.includes("admin")) return "admin";
     if (item.roles.includes("organizer")) return "organizer";
@@ -246,7 +304,8 @@ export function ProfilePage() {
     { key: "personal", label: "Información personal", visible: true },
     { key: "organized", label: "Eventos organizados por mí", visible: canViewOrganizerCards },
     { key: "scheduled", label: "Agenda de eventos", visible: true },
-    { key: "users", label: "Gestión de usuarios", visible: isAdmin }
+    { key: "users", label: "Gestión de usuarios", visible: isAdmin },
+    { key: "allEvents", label: "Todos los eventos", visible: isAdmin }
   ];
 
   const visibleSections = sectionItems.filter((item) => item.visible);
@@ -269,6 +328,68 @@ export function ProfilePage() {
     setShowNewPassword(false);
     setShowConfirmPassword(false);
   };
+
+  const formatDateRange = (startDate: string, endDate: string) =>
+    `${new Date(startDate).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })} - ${new Date(endDate).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    })}`;
+
+  const eventStatusDotClass = (status: EventItem["status"]) => {
+    if (status === "published") return "bg-emerald-500";
+    if (status === "draft") return "bg-amber-500";
+    if (status === "cancelled") return "bg-rose-500";
+    if (status === "finished") return "bg-slate-500";
+    return "bg-muted-foreground";
+  };
+
+  const filteredAndSortedAllEvents = (() => {
+    const nameTerm = allEventsNameFilter.trim().toLowerCase();
+    const organizerTerm = allEventsOrganizerFilter.trim().toLowerCase();
+    const selectedDate = allEventsDateFilter ? new Date(`${allEventsDateFilter}T00:00:00`) : null;
+    const selectedTime = selectedDate?.getTime() ?? null;
+
+    const filtered = allEvents.filter((event) => {
+      const matchesName = !nameTerm || event.name.toLowerCase().includes(nameTerm);
+      const organizerName = (event.organizer_name || "No disponible").toLowerCase();
+      const matchesOrganizer = !organizerTerm || organizerName.includes(organizerTerm);
+
+      let matchesDate = true;
+      if (selectedTime !== null) {
+        const start = new Date(event.start_date);
+        const end = new Date(event.end_date);
+        start.setHours(0, 0, 0, 0);
+        end.setHours(23, 59, 59, 999);
+        matchesDate = selectedTime >= start.getTime() && selectedTime <= end.getTime();
+      }
+
+      return matchesName && matchesOrganizer && matchesDate;
+    });
+
+    return filtered.sort((a, b) => {
+      if (allEventsSortBy === "name") {
+        return a.name.localeCompare(b.name, "es", { sensitivity: "base" });
+      }
+      return new Date(a.start_date).getTime() - new Date(b.start_date).getTime();
+    });
+  })();
+  const allEventsTotals = filteredAndSortedAllEvents.reduce(
+    (acc, event) => {
+      acc.total += 1;
+      acc[event.status] += 1;
+      return acc;
+    },
+    { total: 0, draft: 0, published: 0, cancelled: 0, finished: 0 }
+  );
 
   const onProfileSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -338,7 +459,7 @@ export function ProfilePage() {
             <CardTitle className="text-base">Secciones</CardTitle>
             
           </CardHeader>
-          <CardContent className="space-y-6 mt-4">
+          <CardContent className="space-y-4 mt-4">
             {visibleSections.map((section) => {
               const isActive = activeSection === section.key;
               return (
@@ -485,7 +606,8 @@ export function ProfilePage() {
                     <CardContent className="space-y-1">
                       <p><strong>Evento:</strong> {event.name}</p>
                       <p><strong>Estado:</strong> {eventStatusLabel(event.status)}</p>
-                      <p className="muted">
+                      <p>
+                        <strong>Fecha y hora:</strong>{" "}
                         {new Date(event.start_date).toLocaleString()} - {new Date(event.end_date).toLocaleString()}
                       </p>
                       <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
@@ -521,7 +643,10 @@ export function ProfilePage() {
                           : "Sin ponentes asignados"}
                       </p>
                       <p><strong>Estado:</strong> {registrationStatusLabel(item.status)}</p>
-                      <p className="muted">{new Date(item.registered_at).toLocaleString()}</p>
+                      <p>
+                        <strong>Fecha y hora:</strong>{" "}
+                        {new Date(item.registered_at).toLocaleString()}
+                      </p>
                       {item.notes && <p><strong>Nota:</strong> {item.notes}</p>}
                       <Button asChild variant="outline" size="sm" className="mt-2 w-fit">
                         <Link to={`/events/${item.event_id}`}>Ver detalle del evento</Link>
@@ -576,6 +701,116 @@ export function ProfilePage() {
                         ))}
                       </tbody>
                     </table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {activeSection === "allEvents" && isAdmin && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Todos los eventos</CardTitle>
+                <CardDescription>Vista global para administración.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid items-center gap-3 md:grid-cols-[1fr_1fr_180px_auto_auto]">
+                  <Input
+                    className="h-10"
+                    placeholder="Filtrar por nombre"
+                    value={allEventsNameFilter}
+                    onChange={(e) => setAllEventsNameFilter(e.target.value)}
+                  />
+                  <Input
+                    className="h-10"
+                    placeholder="Filtrar por organizador"
+                    value={allEventsOrganizerFilter}
+                    onChange={(e) => setAllEventsOrganizerFilter(e.target.value)}
+                  />
+                  <Input
+                    className="h-10"
+                    type="date"
+                    value={allEventsDateFilter}
+                    onChange={(e) => setAllEventsDateFilter(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => setAllEventsSortBy((prev) => (prev === "name" ? "date" : "name"))}
+                  >
+                    {allEventsSortBy === "name" ? "Orden: Nombre A-Z" : "Orden: Fecha próxima"}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-10"
+                    onClick={() => {
+                      setAllEventsNameFilter("");
+                      setAllEventsOrganizerFilter("");
+                      setAllEventsDateFilter("");
+                    }}
+                    disabled={!allEventsNameFilter && !allEventsOrganizerFilter && !allEventsDateFilter}
+                  >
+                    Limpiar
+                  </Button>
+                </div>
+                {allEventsLoading && <SectionSpinner label="Cargando todos los eventos..." />}
+                {allEventsError && <p className="error">{allEventsError}</p>}
+                {!allEventsLoading && !allEvents.length && (
+                  <p className="muted">No hay eventos para mostrar.</p>
+                )}
+                {!allEventsLoading && !!allEvents.length && !filteredAndSortedAllEvents.length && (
+                  <p className="muted">No hay eventos que coincidan con los filtros actuales.</p>
+                )}
+                {!!filteredAndSortedAllEvents.length && (
+                  <div className="space-y-3">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Nombre</TableHead>
+                          <TableHead>Fecha</TableHead>
+                          <TableHead>Organizador</TableHead>
+                          <TableHead className="text-center">Estado</TableHead>
+                          <TableHead className="text-right">Ver detalles</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredAndSortedAllEvents.map((event) => (
+                          <TableRow key={`admin-all-events-${event.id}`}>
+                            <TableCell className="font-medium">{event.name}</TableCell>
+                            <TableCell>{formatDateRange(event.start_date, event.end_date)}</TableCell>
+                            <TableCell>{event.organizer_name || "No disponible"}</TableCell>
+                            <TableCell className="text-center">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span
+                                      className={`inline-block h-3 w-3 rounded-full ${eventStatusDotClass(event.status)}`}
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>{eventStatusLabel(event.status)}</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button asChild variant="outline" size="sm">
+                                <Link to={`/events/${event.id}`}>Ver detalle</Link>
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm">
+                      <p>
+                        <strong>Total eventos:</strong> {allEventsTotals.total}
+                      </p>
+                      <p className="muted">
+                        Borradores: {allEventsTotals.draft} · Publicados: {allEventsTotals.published} ·
+                        Cancelados: {allEventsTotals.cancelled} · Finalizados: {allEventsTotals.finished}
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>

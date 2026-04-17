@@ -123,10 +123,9 @@ export function OffererPage() {
 
   return (
     <div className="container">
-      <h1 className="my-6">Soy oferente?</h1>
+      <h1 className="my-6">¿Soy oferente?</h1>
       <Card className="mt-6">
         <CardHeader>
-          <CardTitle>Soy oferente?</CardTitle>
           <CardDescription>
             Busca por nombre o parte del nombre de un oferente y te mostraremos los eventos donde tiene sesiones asignadas.
           </CardDescription>

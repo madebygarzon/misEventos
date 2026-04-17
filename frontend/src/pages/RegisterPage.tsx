@@ -1,8 +1,9 @@
 import type { ComponentType } from "react";
 import { FormEvent, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { notifyError } from "@/utils/notifications";
@@ -47,66 +48,72 @@ export function RegisterPage() {
   return (
     <div className="container">
       <h1 className="my-6">Registro</h1>
-      <div className="mx-auto mt-8 grid w-full grid-cols-1 items-center gap-6 lg:grid-cols-2">
-        <div className="w-full space-y-4">
-          <div>
-           
-            <p className="muted">Crea tu cuenta para gestionar eventos.</p>
+      <Card className="mx-auto mt-8">
+        <CardContent className="pt-4">
+          <div className="grid w-full grid-cols-1 items-start gap-6 lg:grid-cols-2">
+            <div className="w-full space-y-4">
+              <div>
+                <p className="muted text-xl mb-10">Crea tu cuenta para gestionar eventos.</p>
+              </div>
+              <form onSubmit={onSubmit}>
+                <FieldGroup>
+                  <Field>
+                    <FieldLabel htmlFor="register-full-name">Nombre completo</FieldLabel>
+                    <Input
+                      id="register-full-name"
+                      placeholder="Nombre y apellido"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="register-email">Correo electrónico</FieldLabel>
+                    <Input
+                      id="register-email"
+                      type="email"
+                      placeholder="ejemplo@correo.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="register-password">Contraseña</FieldLabel>
+                    <Input
+                      id="register-password"
+                      type="password"
+                      placeholder="Crea una contraseña"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                    />
+                    <FieldDescription>Usa una contraseña segura para proteger tu cuenta.</FieldDescription>
+                  </Field>
+
+                  <Button type="submit" disabled={loading}>
+                    Crear cuenta
+                  </Button>
+                  <Button asChild type="button" variant="outline">
+                    <Link to="/login">Ya tengo cuenta</Link>
+                  </Button>
+                  <FieldError>{error}</FieldError>
+                </FieldGroup>
+              </form>
+            </div>
+
+            <div className="flex w-full items-center justify-center">
+              {lottieData && LottiePlayer ? (
+                <LottiePlayer animationData={lottieData} loop className="h-full w-full max-w-xl" />
+              ) : (
+                <p className="muted">No se pudo cargar la animación.</p>
+              )}
+            </div>
           </div>
-          <form onSubmit={onSubmit}>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="register-full-name">Nombre completo</FieldLabel>
-                <Input
-                  id="register-full-name"
-                  placeholder="Nombre y apellido"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  required
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="register-email">Correo electrónico</FieldLabel>
-                <Input
-                  id="register-email"
-                  type="email"
-                  placeholder="ejemplo@correo.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </Field>
-
-              <Field>
-                <FieldLabel htmlFor="register-password">Contraseña</FieldLabel>
-                <Input
-                  id="register-password"
-                  type="password"
-                  placeholder="Crea una contraseña"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-                <FieldDescription>Usa una contraseña segura para proteger tu cuenta.</FieldDescription>
-              </Field>
-
-              <Button type="submit" disabled={loading}>
-                Crear cuenta
-              </Button>
-              <FieldError>{error}</FieldError>
-            </FieldGroup>
-          </form>
-        </div>
-
-        <div className="flex w-full items-center justify-center ">
-          {lottieData && LottiePlayer ? (
-            <LottiePlayer animationData={lottieData} loop className="h-full w-full max-w-xl" />
-          ) : (
-            <p className="muted">No se pudo cargar la animación.</p>
-          )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

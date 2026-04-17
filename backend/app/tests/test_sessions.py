@@ -60,7 +60,6 @@ def _session_payload(start_time: datetime, end_time: datetime, title: str = "Ses
         "description": "Session description",
         "start_time": start_time.isoformat(),
         "end_time": end_time.isoformat(),
-        "capacity": 50,
         "status": "scheduled",
     }
 

@@ -10,6 +10,7 @@ import { EventsListPage } from "../pages/EventsListPage";
 import { LoginPage } from "../pages/LoginPage";
 import { ManualPage } from "../pages/ManualPage";
 import { MetricsPage } from "../pages/MetricsPage";
+import { NotFoundPage } from "../pages/NotFoundPage";
 import { OffererPage } from "../pages/OffererPage";
 import { ProfilePage } from "../pages/ProfilePage";
 import { RegisterPage } from "../pages/RegisterPage";
@@ -47,5 +48,9 @@ export const router = createBrowserRouter([
       { path: "login", element: <LoginPage /> },
       { path: "register", element: <RegisterPage /> }
     ]
+  },
+  {
+    path: "*",
+    element: <NotFoundPage />
   }
 ]);

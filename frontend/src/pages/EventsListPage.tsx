@@ -86,7 +86,7 @@ export function EventsListPage() {
               ? `¡Bienvenido ${user?.full_name || user?.email || "Usuario"}!`
               : "¡Bienvenido!"}
           </CardTitle>
-          <CardDescription className="muted text-[20px]">Al sistema de gestion de eventos: Mis Eventos</CardDescription>
+          <CardDescription className="muted text-[20px]">Al sistema de gestión de eventos: Mis Eventos</CardDescription>
           <div className="mt-4 flex flex-wrap items-center justify-center gap-4">
             <Button asChild className="w-fit">
               <Link to="/events">Ver todos los eventos</Link>

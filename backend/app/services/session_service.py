@@ -69,7 +69,7 @@ class SessionService:
             description=payload.description,
             start_time=payload.start_time,
             end_time=payload.end_time,
-            capacity=payload.capacity,
+            capacity=event.capacity,
             status=payload.status,
         )
         return self.session_repository.create(event_session)
@@ -90,6 +90,8 @@ class SessionService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         update_data = payload.model_dump(exclude_unset=True)
+        # Session capacity is governed by the parent event.
+        update_data.pop("capacity", None)
 
         if "status" in update_data:
             self._validate_status(update_data["status"])

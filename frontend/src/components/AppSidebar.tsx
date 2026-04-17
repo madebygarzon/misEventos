@@ -40,7 +40,7 @@ export function AppSidebar() {
   const mainItems: NavigationItem[] = [
     { label: "Inicio", href: "/", icon: LayoutDashboard, exact: true },
     { label: "Eventos", href: "/events", icon: CalendarDays },
-    { label: "Soy oferente?", href: "/soy-oferente", icon: BriefcaseBusiness },
+    { label: "¿Soy oferente?", href: "/soy-oferente", icon: BriefcaseBusiness },
     ...(isAuthenticated && isAdmin ? [{ label: "Métricas", href: "/metricas", icon: BarChart3 }] : []),
     ...(isAuthenticated && canManageEvents ? [{ label: "Crear Evento", href: "/events/create", icon: CirclePlus }] : []),
     ...(isAuthenticated ? [{ label: "Mi Perfil", href: "/profile", icon: UserCircle2 }] : [])

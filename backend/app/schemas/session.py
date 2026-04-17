@@ -8,7 +8,6 @@ class SessionCreate(BaseModel):
     description: str | None = None
     start_time: datetime
     end_time: datetime
-    capacity: int = Field(gt=0)
     status: str = Field(default="scheduled")
 
 
@@ -17,7 +16,6 @@ class SessionUpdate(BaseModel):
     description: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
-    capacity: int | None = Field(default=None, gt=0)
     status: str | None = None
 
 
@@ -28,7 +26,6 @@ class SessionResponse(BaseModel):
     description: str | None
     start_time: datetime
     end_time: datetime
-    capacity: int
     status: str
     created_at: datetime
     updated_at: datetime

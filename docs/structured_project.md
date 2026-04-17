@@ -145,7 +145,6 @@ erDiagram
       text description
       timestamp start_time
       timestamp end_time
-      int capacity
       string status "scheduled|in_progress|finished|cancelled"
       timestamp created_at
       timestamp updated_at
@@ -211,7 +210,6 @@ erDiagram
 
 - `users.email` único.
 - `events.capacity > 0`.
-- `sessions.capacity > 0`.
 - `events.organizer_id` referencia `users.id`.
 - `sessions.event_id` referencia `events.id`.
 - `registrations.user_id` referencia `users.id`.

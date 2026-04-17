@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { Eye, Pencil } from "lucide-react";
+import { ArrowLeft, Eye, Pencil } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -69,14 +69,12 @@ export function EventDetailPage() {
     description: string;
     start_time: string;
     end_time: string;
-    capacity: number | "";
     status: "scheduled" | "in_progress" | "finished" | "cancelled";
   }>({
     title: "",
     description: "",
     start_time: "",
     end_time: "",
-    capacity: "",
     status: "scheduled"
   });
   const [sessionSpeakerDrafts, setSessionSpeakerDrafts] = useState<SessionSpeakerDraft[]>([]);
@@ -207,7 +205,6 @@ export function EventDetailPage() {
       description: "",
       start_time: "",
       end_time: "",
-      capacity: "",
       status: "scheduled"
     });
     setSessionSpeakerDrafts([]);
@@ -217,7 +214,7 @@ export function EventDetailPage() {
   };
 
   const toLocalInputDateTime = (isoDateTime: string): string => {
-    const d = new Date(isoDateTime);
+    const d = parseApiDateTime(isoDateTime);
     const pad = (v: number) => String(v).padStart(2, "0");
     const year = d.getFullYear();
     const month = pad(d.getMonth() + 1);
@@ -227,8 +224,19 @@ export function EventDetailPage() {
     return `${year}-${month}-${day}T${hour}:${minute}`;
   };
 
-  const eventStartLocal = currentEvent ? toLocalInputDateTime(currentEvent.start_date) : "";
-  const eventEndLocal = currentEvent ? toLocalInputDateTime(currentEvent.end_date) : "";
+  const parseApiDateTime = (value: string): Date => {
+    const hasTimeZone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
+    return new Date(hasTimeZone ? value : `${value}Z`);
+  };
+
+  const formatEsDateTime = (value: string): string =>
+    parseApiDateTime(value).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
 
   const onSessionSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -239,15 +247,26 @@ export function EventDetailPage() {
     setSessionsError(null);
 
     try {
-      const startIso = new Date(sessionForm.start_time).toISOString();
-      const endIso = new Date(sessionForm.end_time).toISOString();
+      const startDate = new Date(sessionForm.start_time);
+      const endDate = new Date(sessionForm.end_time);
+      const startIso = startDate.toISOString();
+      const endIso = endDate.toISOString();
 
       if (currentEvent) {
-        if (startIso < currentEvent.start_date || endIso > currentEvent.end_date) {
+        const eventStart = parseApiDateTime(currentEvent.start_date);
+        const eventEnd = parseApiDateTime(currentEvent.end_date);
+
+        if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+          setSessionsError("Fecha u hora inválida. Verifica el formato de la sesión.");
+          setSessionActionLoading(false);
+          return;
+        }
+
+        if (startDate.getTime() < eventStart.getTime() || endDate.getTime() > eventEnd.getTime()) {
           setSessionsError(
-            `La sesión debe estar dentro del rango del evento: ${new Date(
+            `La sesión debe estar dentro del rango del evento: ${formatEsDateTime(
               currentEvent.start_date
-            ).toLocaleString()} - ${new Date(currentEvent.end_date).toLocaleString()}`
+            )} - ${formatEsDateTime(currentEvent.end_date)}`
           );
           setSessionActionLoading(false);
           return;
@@ -257,7 +276,6 @@ export function EventDetailPage() {
       const payload = {
         ...sessionForm,
         description: sessionForm.description || null,
-        capacity: Number(sessionForm.capacity),
         start_time: startIso,
         end_time: endIso
       };
@@ -311,7 +329,6 @@ export function EventDetailPage() {
       description: session.description || "",
       start_time: toLocalInputDateTime(session.start_time),
       end_time: toLocalInputDateTime(session.end_time),
-      capacity: session.capacity,
       status: session.status
     });
     setSessionSpeakerDrafts(
@@ -536,7 +553,7 @@ export function EventDetailPage() {
           <div className="rounded-lg border border-border bg-muted/20 p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Horario</p>
             <p className="mt-1">
-              {new Date(session.start_time).toLocaleString()} - {new Date(session.end_time).toLocaleString()}
+              {formatEsDateTime(session.start_time)} - {formatEsDateTime(session.end_time)}
             </p>
           </div>
 
@@ -544,9 +561,6 @@ export function EventDetailPage() {
             <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Estado</span>
             <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${sessionStatusBadgeClass(session.status)}`}>
               {sessionStatusLabel(session.status)}
-            </span>
-            <span className="inline-flex rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-foreground">
-              Capacidad: {session.capacity}
             </span>
           </div>
 
@@ -620,16 +634,18 @@ export function EventDetailPage() {
                 />
                 <h2 className="mt-4 text-base font-semibold">Detalle del evento</h2>
                 <CardDescription>
-                  Rango: {new Date(currentEvent.start_date).toLocaleString()} -{" "}
-                  {new Date(currentEvent.end_date).toLocaleString()}
+                  Rango: {formatEsDateTime(currentEvent.start_date)} -{" "}
+                  {formatEsDateTime(currentEvent.end_date)}
                 </CardDescription>
                 <p className="text-sm">
                   <strong>Organizador del evento:</strong> {currentEvent.organizer_name || "No disponible"}
                 </p>
-                <p className="muted">{currentEvent.location || "Sin ubicación"}</p>
+                <span className="inline-flex w-fit rounded-full border border-border bg-background px-3 py-1 text-xs font-semibold text-foreground">
+                  {currentEvent.location || "Sin ubicación"}
+                </span>
               </div>
 
-              <div className="flex h-full flex-col gap-3 rounded-xl border border-border bg-muted/20 p-4">
+              <div className="flex h-full flex-col gap-3 rounded-xl bg-gradient-to-br from-card/95 via-card/85 to-muted/45 p-4 shadow-[0_28px_80px_-40px_rgba(2,6,23,0.55)] backdrop-blur-sm">
                 <div>
                   <span
                     className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${eventStatusBadgeClass(
@@ -649,12 +665,15 @@ export function EventDetailPage() {
                   {!!sessions.length && (
                     <div className="space-y-2">
                       {sessions.slice(0, 4).map((session) => (
-                        <div key={`summary-${session.id}`} className="rounded-lg border border-border bg-background px-3 py-2">
+                        <div
+                          key={`summary-${session.id}`}
+                          className="rounded-lg bg-background/85 px-3 py-2 shadow-[0_12px_26px_-18px_rgba(15,23,42,0.55)]"
+                        >
                           <div className="flex items-start justify-between gap-2">
                             <div>
                               <p className="text-sm font-medium">{session.title}</p>
                               <p className="muted">
-                                {sessionStatusLabel(session.status)} · Capacidad {session.capacity}
+                                {sessionStatusLabel(session.status)}
                               </p>
                             </div>
                             <div className="flex items-center gap-2">
@@ -682,7 +701,7 @@ export function EventDetailPage() {
                   )}
                 </div>
                 {isOrganizer && (
-                  <div className="mt-auto flex justify-end gap-2 border-t border-border pt-3">
+                  <div className="mt-auto flex justify-end gap-2 pt-3">
                     <Dialog
                       open={sessionDialogOpen}
                       onOpenChange={(open) => {
@@ -720,19 +739,6 @@ export function EventDetailPage() {
                               onChange={(e) => setSessionForm((prev) => ({ ...prev, title: e.target.value }))}
                               required
                             />
-                            <Input
-                              type="number"
-                              min={1}
-                              placeholder="Ingresa la capacidad"
-                              value={sessionForm.capacity}
-                              onChange={(e) =>
-                                setSessionForm((prev) => ({
-                                  ...prev,
-                                  capacity: e.target.value === "" ? "" : Number(e.target.value)
-                                }))
-                              }
-                              required
-                            />
                           </div>
                           <Textarea
                             placeholder="Descripción"
@@ -744,16 +750,12 @@ export function EventDetailPage() {
                             <Input
                               type="datetime-local"
                               value={sessionForm.start_time}
-                              min={eventStartLocal}
-                              max={eventEndLocal}
                               onChange={(e) => setSessionForm((prev) => ({ ...prev, start_time: e.target.value }))}
                               required
                             />
                             <Input
                               type="datetime-local"
                               value={sessionForm.end_time}
-                              min={eventStartLocal}
-                              max={eventEndLocal}
                               onChange={(e) => setSessionForm((prev) => ({ ...prev, end_time: e.target.value }))}
                               required
                             />
@@ -876,12 +878,20 @@ export function EventDetailPage() {
               <p>{currentEvent.description || "Sin descripción"}</p>
             </div>
 
-            <div className="space-y-2 font-extrabold border-t border-border pt-5">
+            <div className="space-y-2 border-t border-border pt-5">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button asChild variant="ghost" size="sm">
+                  <Link to="/events">
+                    <ArrowLeft className="size-4" />
+                    Volver a eventos
+                  </Link>
+                </Button>
               {!isAuthenticated && (
                 <Button asChild variant="outline" size="sm" className="w-fit">
                   <Link to="/login">Inicia sesión para poder inscribirte al evento.</Link>
                 </Button>
               )}
+              </div>
               {regMessage && <p className="success">{regMessage}</p>}
               {regError && <p className="error">{regError}</p>}
             </div>

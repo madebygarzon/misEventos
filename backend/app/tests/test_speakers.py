@@ -50,7 +50,6 @@ def _session_payload(start: datetime, end: datetime) -> dict:
         "description": "Detalle",
         "start_time": start.isoformat(),
         "end_time": end.isoformat(),
-        "capacity": 40,
         "status": "scheduled",
     }
 

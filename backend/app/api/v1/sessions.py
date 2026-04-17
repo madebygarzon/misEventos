@@ -21,7 +21,6 @@ def _to_response(item) -> SessionResponse:
         description=item.description,
         start_time=item.start_time,
         end_time=item.end_time,
-        capacity=item.capacity,
         status=item.status,
         created_at=item.created_at,
         updated_at=item.updated_at,

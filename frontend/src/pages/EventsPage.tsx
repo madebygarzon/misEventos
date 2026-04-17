@@ -32,6 +32,7 @@ export function EventsPage() {
   const { user } = useAuthStore();
   const { events, loading, error, page, pages, fetchEvents } = useEventsStore();
   const [search, setSearch] = useState("");
+  const [filterDate, setFilterDate] = useState("");
   const isAdmin = Boolean(user?.roles?.includes("admin"));
   const canManageEvents = Boolean(
     user?.roles?.includes("organizer") || isAdmin,
@@ -51,6 +52,7 @@ export function EventsPage() {
 
   const onClearSearch = () => {
     setSearch("");
+    setFilterDate("");
     fetchEvents({ page: 1, limit: 10 });
   };
 
@@ -71,6 +73,24 @@ export function EventsPage() {
   };
 
   const pageItems = buildPageItems();
+  const formatEventDate = (value: string) =>
+    new Date(value).toLocaleString("es-CO", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  const selectedFilterDate = filterDate ? new Date(`${filterDate}T00:00:00`) : null;
+  const visibleEvents = events.filter((event) => {
+    if (!selectedFilterDate) return true;
+    const selectedTime = selectedFilterDate.getTime();
+    const start = new Date(event.start_date);
+    const end = new Date(event.end_date);
+    start.setHours(0, 0, 0, 0);
+    end.setHours(23, 59, 59, 999);
+    return selectedTime >= start.getTime() && selectedTime <= end.getTime();
+  });
 
   return (
     <div className="container">
@@ -82,20 +102,27 @@ export function EventsPage() {
             Buscador y listado completo de eventos.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-3 px-4 pt-2 md:grid-cols-[1fr_auto_auto]">
+        <CardContent className="grid items-center gap-3 px-4 pt-2 md:grid-cols-[1fr_auto_180px_auto]">
           <Input
+            className="h-10"
             placeholder="Buscar por nombre"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <Button onClick={onSearch} className="md:w-auto">
+          <Button onClick={onSearch} className="h-10 md:w-auto">
             Buscar
           </Button>
+          <Input
+            className="h-10"
+            type="date"
+            value={filterDate}
+            onChange={(e) => setFilterDate(e.target.value)}
+          />
           <Button
             onClick={onClearSearch}
             variant="outline"
-            className="md:w-auto"
-            disabled={!search.trim()}
+            className="h-10 md:w-auto"
+            disabled={!search.trim() && !filterDate}
           >
             Limpiar
           </Button>
@@ -128,7 +155,7 @@ export function EventsPage() {
       )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {events.map((event) => (
+        {visibleEvents.map((event) => (
           <Card key={event.id} className="overflow-hidden pt-0">
             <EventFeaturedImage
               name={event.name}
@@ -145,6 +172,10 @@ export function EventsPage() {
                 {event.location || "Sin ubicación"} ·{" "}
                 {eventStatusLabel(event.status)}
               </CardDescription>
+              <p className="muted">
+                Fecha: {formatEventDate(event.start_date)} -{" "}
+                {formatEventDate(event.end_date)}
+              </p>
             </CardHeader>
             <CardContent>
               <p>{event.description || "Sin descripción"}</p>
@@ -163,6 +194,9 @@ export function EventsPage() {
           </Card>
         ))}
       </div>
+      {!loading && !visibleEvents.length && (
+        <p className="muted mt-3">No hay eventos para la fecha seleccionada.</p>
+      )}
 
       <Pagination className="mt-6">
         <PaginationContent>

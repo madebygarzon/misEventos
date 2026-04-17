@@ -5,7 +5,6 @@ export type SessionItem = {
   description: string | null;
   start_time: string;
   end_time: string;
-  capacity: number;
   status: "scheduled" | "in_progress" | "finished" | "cancelled";
   created_at: string;
   updated_at: string;
@@ -16,7 +15,6 @@ export type SessionCreatePayload = {
   description?: string | null;
   start_time: string;
   end_time: string;
-  capacity: number;
   status: "scheduled" | "in_progress" | "finished" | "cancelled";
 };
 
