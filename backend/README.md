@@ -16,10 +16,18 @@ cp .env.example .env
 
 Variables principales:
 
-- `DATABASE_URL`
+- `APP_NAME`
+- `API_V1_PREFIX`
 - `SECRET_KEY`
+- `ALGORITHM`
+- `ACCESS_TOKEN_EXPIRE_MINUTES`
+- `DATABASE_URL`
 - `BACKEND_CORS_ORIGINS`
 - `ADMIN_EMAIL`
+
+Los valores reales de estas variables están documentados en:
+
+- `docs/structured_project.md`
 
 ## Ejecutar local
 

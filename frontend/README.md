@@ -15,7 +15,11 @@ cp .env.example .env
 
 Variable principal:
 
-- `VITE_API_BASE_URL` (por defecto: `http://localhost:8000/api/v1`)
+- `VITE_API_BASE_URL`
+
+El valor real de esta variable está documentado en:
+
+- `docs/structured_project.md`
 
 ## Ejecutar local
 

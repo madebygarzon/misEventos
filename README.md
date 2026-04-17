@@ -36,6 +36,15 @@ cp backend/.env.example backend/.env
 cp frontend/.env.example frontend/.env
 ```
 
+Variables a configurar (sin valores en este README):
+
+- Backend: `APP_NAME`, `API_V1_PREFIX`, `SECRET_KEY`, `ALGORITHM`, `ACCESS_TOKEN_EXPIRE_MINUTES`, `DATABASE_URL`, `BACKEND_CORS_ORIGINS`, `ADMIN_EMAIL`
+- Frontend: `VITE_API_BASE_URL`
+
+Los valores reales están documentados en:
+
+- `docs/structured_project.md`
+
 ---
 ## 4) Levantar proyecto con Docker (recomendado)
 

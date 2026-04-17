@@ -69,6 +69,41 @@ Desde perfil, el admin también puede gestionar usuarios y cambiar su rol.
 - el admin principal configurado (`madebygarzon@gmail.com`) no puede perder rol `admin`.
 
 ---
+## Variables de entorno reales (MVP)
+
+Esta sección centraliza los valores reales que uso en desarrollo para los `.env`.
+
+### Root (`/.env`)
+
+Estas variables son referencia para base de datos local; en Docker Compose el servicio `db` ya define estos valores explícitamente.
+
+| Variable | Valor real | Corresponde a |
+|---|---|---|
+| `POSTGRES_DB` | `mis_eventos` | Nombre de la base PostgreSQL |
+| `POSTGRES_USER` | `postgres` | Usuario de PostgreSQL |
+| `POSTGRES_PASSWORD` | `postgres` | Contraseña de PostgreSQL |
+| `DATABASE_URL` | `postgresql+psycopg://postgres:postgres@db:5432/mis_eventos` | URL de conexión backend -> DB |
+
+### Backend (`/backend/.env`)
+
+| Variable | Valor real | Corresponde a |
+|---|---|---|
+| `APP_NAME` | `Mis Eventos API` | Nombre de la aplicación FastAPI |
+| `API_V1_PREFIX` | `/api/v1` | Prefijo base de rutas API |
+| `SECRET_KEY` | `replace_with_a_strong_random_secret` | Firma de JWT |
+| `ALGORITHM` | `HS256` | Algoritmo JWT |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Minutos de vigencia del token |
+| `DATABASE_URL` | `postgresql+psycopg://postgres:postgres@db:5432/mis_eventos` | Conexión a PostgreSQL |
+| `BACKEND_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Orígenes permitidos para frontend |
+| `ADMIN_EMAIL` | `madebygarzon@gmail.com` | Usuario admin principal del sistema |
+
+### Frontend (`/frontend/.env`)
+
+| Variable | Valor real | Corresponde a |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | URL base del backend consumida por el cliente React |
+
+---
 ## Backlog de métricas (tareas a realizar)
 
 Estas tareas describen los indicadores que debo implementar o fortalecer en el módulo de métricas del frontend/backend.
