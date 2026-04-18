@@ -72,6 +72,13 @@ export function EventsPage() {
   };
 
   const pageItems = buildPageItems();
+  const eventStatusBadgeClass = (status: string) => {
+    if (status === "published") return "bg-emerald-100 text-emerald-700 border-emerald-200";
+    if (status === "draft") return "bg-amber-100 text-amber-700 border-amber-200";
+    if (status === "cancelled") return "bg-rose-100 text-rose-700 border-rose-200";
+    if (status === "finished") return "bg-slate-200 text-slate-700 border-slate-300";
+    return "bg-muted text-muted-foreground border-border";
+  };
   const formatEventDate = (value: string) =>
     new Date(value).toLocaleString("es-CO", {
       day: "2-digit",
@@ -168,9 +175,15 @@ export function EventsPage() {
               <CardHeader>
                 <CardTitle>{event.name}</CardTitle>
                 <CardDescription>
-                  {event.location || "Sin ubicación"} ·{" "}
-                  {eventStatusLabel(event.status)}
+                  {event.location || "Sin ubicación"}
                 </CardDescription>
+                <span
+                  className={`inline-flex w-fit rounded-full border px-3 py-1 text-xs font-semibold ${eventStatusBadgeClass(
+                    event.status
+                  )}`}
+                >
+                  {eventStatusLabel(event.status)}
+                </span>
                 <p className="muted">
                   Fecha: {formatEventDate(event.start_date)} -{" "}
                   {formatEventDate(event.end_date)}

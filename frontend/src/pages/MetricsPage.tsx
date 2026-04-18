@@ -2,10 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { AlertCircle } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, XAxis, YAxis } from "recharts";
 
-import { listEventsRequest } from "@/api/events";
-import { listSessionsByEventRequest } from "@/api/sessions";
-import { listSessionSpeakersRequest } from "@/api/speakers";
+import { getMetricsSummaryRequest } from "@/api/metrics";
 import { SectionSpinner } from "@/components/SectionSpinner";
+import { Button } from "@/components/ui/button";
 import {
   ChartContainer,
   ChartLegend,
@@ -15,31 +14,12 @@ import {
   type ChartConfig
 } from "@/components/ui/chart";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "@/components/ui/hover-card";
-import { getErrorMessage } from "@/utils/errors";
-import { eventStatusLabel, sessionStatusLabel } from "@/utils/labels";
+import type { MetricsSummaryResponse } from "@/types/metrics";
+import { eventStatusLabel, registrationStatusLabel, sessionStatusLabel } from "@/utils/labels";
 import { notifyError } from "@/utils/notifications";
-
-const EVENT_STATUS_ORDER = ["draft", "published", "cancelled", "finished"] as const;
-const SESSION_STATUS_ORDER = ["scheduled", "in_progress", "finished", "cancelled"] as const;
-
-type MetricsData = {
-  eventsByStatus: Array<{ status: string; label: string; total: number }>;
-  sessionsByStatus: Array<{ status: string; label: string; total: number }>;
-  eventsByMonth: Array<{ month: string; eventos: number }>;
-  topOrganizers: Array<{ name: string; eventos: number }>;
-  topSpeakers: Array<{ name: string; sesiones: number }>;
-  sessionsPerEvent: Array<{ event: string; sesiones: number }>;
-  totals: {
-    events: number;
-    sessions: number;
-    speakerAssignments: number;
-    avgSessionsPerEvent: number;
-    avgSpeakersPerSession: number;
-    publishedRate: number;
-    upcomingEvents: number;
-  };
-};
+import { getErrorMessage } from "../utils/errors";
 
 const eventsByStatusConfig = {
   total: { label: "Eventos", color: "var(--color-chart-1)" }
@@ -52,21 +32,38 @@ const sessionsByStatusConfig = {
   cancelled: { label: sessionStatusLabel("cancelled"), color: "var(--color-chart-5)" }
 } satisfies ChartConfig;
 
-const eventsByMonthConfig = {
-  eventos: { label: "Eventos", color: "var(--color-chart-2)" }
+const registrationsByStatusConfig = {
+  registered: { label: registrationStatusLabel("registered"), color: "var(--color-chart-3)" },
+  cancelled: { label: registrationStatusLabel("cancelled"), color: "var(--color-chart-5)" },
+  waitlist: { label: registrationStatusLabel("waitlist"), color: "var(--color-chart-2)" }
 } satisfies ChartConfig;
 
-const topOrganizersConfig = {
-  eventos: { label: "Eventos", color: "var(--color-chart-3)" }
+const monthTrendConfig = {
+  total: { label: "Total", color: "var(--color-chart-2)" }
 } satisfies ChartConfig;
 
-const topSpeakersConfig = {
-  sesiones: { label: "Sesiones", color: "var(--color-chart-4)" }
+const organizerConfig = {
+  events: { label: "Eventos", color: "var(--color-chart-3)" }
+} satisfies ChartConfig;
+
+const speakersConfig = {
+  sessions: { label: "Sesiones", color: "var(--color-chart-4)" }
+} satisfies ChartConfig;
+
+const occupancyConfig = {
+  occupancy: { label: "Ocupación (%)", color: "var(--color-chart-1)" }
 } satisfies ChartConfig;
 
 const sessionsPerEventConfig = {
-  sesiones: { label: "Sesiones", color: "var(--color-chart-5)" }
+  sessions: { label: "Sesiones", color: "var(--color-chart-5)" }
 } satisfies ChartConfig;
+
+type FiltersState = {
+  startDate: string;
+  endDate: string;
+  eventStatus: string;
+  organizerId: string;
+};
 
 function MetricInfo({ description }: { description: string }) {
   return (
@@ -85,180 +82,61 @@ function MetricInfo({ description }: { description: string }) {
   );
 }
 
-function MetricTitle({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span>{title}</span>
-      <MetricInfo description={description} />
-    </div>
-  );
-}
-
-function round2(value: number): number {
-  return Math.round(value * 100) / 100;
-}
-
-function buildMetricsData(payload: {
-  events: Array<{
-    id: string;
-    name: string;
-    organizer_name?: string | null;
-    organizer_id: string;
-    status: string;
-    start_date: string;
-    created_at: string;
-  }>;
-  sessionsByEvent: Record<string, Array<{ id: string; title: string; status: string }>>;
-  speakersBySession: Record<string, Array<{ speaker: { full_name: string } }>>;
-}): MetricsData {
-  const { events, sessionsByEvent, speakersBySession } = payload;
-  const allSessions = Object.values(sessionsByEvent).flat();
-  const allSpeakerAssignments = Object.values(speakersBySession).flat();
-  const now = Date.now();
-
-  const eventsByStatus = EVENT_STATUS_ORDER.map((status) => ({
-    status,
-    label: eventStatusLabel(status),
-    total: events.filter((event) => event.status === status).length
-  }));
-
-  const sessionsByStatus = SESSION_STATUS_ORDER.map((status) => ({
-    status,
-    label: sessionStatusLabel(status),
-    total: allSessions.filter((session) => session.status === status).length
-  }));
-
-  const monthMap = new Map<string, number>();
-  events.forEach((event) => {
-    const date = new Date(event.created_at);
-    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-    monthMap.set(monthKey, (monthMap.get(monthKey) || 0) + 1);
-  });
-  const eventsByMonth = Array.from(monthMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .slice(-8)
-    .map(([monthKey, total]) => {
-      const [year, month] = monthKey.split("-");
-      const date = new Date(Number(year), Number(month) - 1, 1);
-      return {
-        month: date.toLocaleDateString("es-CO", { month: "short", year: "2-digit" }),
-        eventos: total
-      };
-    });
-
-  const organizerMap = new Map<string, number>();
-  events.forEach((event) => {
-    const key = event.organizer_name || `Org ${event.organizer_id.slice(0, 8)}`;
-    organizerMap.set(key, (organizerMap.get(key) || 0) + 1);
-  });
-  const topOrganizers = Array.from(organizerMap.entries())
-    .map(([name, eventos]) => ({ name, eventos }))
-    .sort((a, b) => b.eventos - a.eventos)
-    .slice(0, 6);
-
-  const speakerMap = new Map<string, number>();
-  allSpeakerAssignments.forEach((assignment) => {
-    const key = assignment.speaker.full_name;
-    speakerMap.set(key, (speakerMap.get(key) || 0) + 1);
-  });
-  const topSpeakers = Array.from(speakerMap.entries())
-    .map(([name, sesiones]) => ({ name, sesiones }))
-    .sort((a, b) => b.sesiones - a.sesiones)
-    .slice(0, 8);
-
-  const sessionsPerEvent = events
-    .map((event) => ({
-      event: event.name,
-      sesiones: sessionsByEvent[event.id]?.length || 0
-    }))
-    .sort((a, b) => b.sesiones - a.sesiones)
-    .slice(0, 8);
-
-  const publishedEvents = events.filter((event) => event.status === "published").length;
-  const upcomingEvents = events.filter((event) => new Date(event.start_date).getTime() >= now).length;
-
-  return {
-    eventsByStatus,
-    sessionsByStatus,
-    eventsByMonth,
-    topOrganizers,
-    topSpeakers,
-    sessionsPerEvent,
-    totals: {
-      events: events.length,
-      sessions: allSessions.length,
-      speakerAssignments: allSpeakerAssignments.length,
-      avgSessionsPerEvent: events.length ? round2(allSessions.length / events.length) : 0,
-      avgSpeakersPerSession: allSessions.length ? round2(allSpeakerAssignments.length / allSessions.length) : 0,
-      publishedRate: events.length ? round2((publishedEvents / events.length) * 100) : 0,
-      upcomingEvents
-    }
-  };
+function formatMonthLabel(month: string) {
+  const [year, monthNumber] = month.split("-");
+  const date = new Date(Number(year), Number(monthNumber) - 1, 1);
+  return date.toLocaleDateString("es-CO", { month: "short", year: "2-digit" });
 }
 
 export function MetricsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [metrics, setMetrics] = useState<MetricsData | null>(null);
+  const [metrics, setMetrics] = useState<MetricsSummaryResponse | null>(null);
+  const [filters, setFilters] = useState<FiltersState>({
+    startDate: "",
+    endDate: "",
+    eventStatus: "",
+    organizerId: ""
+  });
+
+  const loadMetrics = async (nextFilters: FiltersState) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getMetricsSummaryRequest({
+        start_date: nextFilters.startDate ? `${nextFilters.startDate}T00:00:00Z` : undefined,
+        end_date: nextFilters.endDate ? `${nextFilters.endDate}T23:59:59Z` : undefined,
+        event_status: nextFilters.eventStatus || undefined,
+        organizer_id: nextFilters.organizerId || undefined
+      });
+      setMetrics(data);
+    } catch (err: any) {
+      const message = getErrorMessage(err, "No fue posible cargar las métricas.");
+      setError(message);
+      await notifyError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const firstPage = await listEventsRequest({ page: 1, limit: 100 });
-        const pageRequests = [];
-        for (let page = 2; page <= firstPage.pages; page += 1) {
-          pageRequests.push(listEventsRequest({ page, limit: 100 }));
-        }
-        const pageResults = pageRequests.length ? await Promise.all(pageRequests) : [];
-        const events = [firstPage, ...pageResults].flatMap((row) => row.items);
-
-        const sessionsByEvent: Record<string, Array<{ id: string; title: string; status: string }>> = {};
-        const sessionsResults = await Promise.allSettled(
-          events.map(async (event) => {
-            const sessions = await listSessionsByEventRequest(event.id);
-            return { eventId: event.id, sessions };
-          })
-        );
-        sessionsResults.forEach((result) => {
-          if (result.status === "fulfilled") {
-            sessionsByEvent[result.value.eventId] = result.value.sessions;
-          }
-        });
-
-        const sessionIds = Object.values(sessionsByEvent).flatMap((sessions) => sessions.map((session) => session.id));
-        const speakersBySession: Record<string, Array<{ speaker: { full_name: string } }>> = {};
-        const speakersResults = await Promise.allSettled(
-          sessionIds.map(async (sessionId) => {
-            const speakers = await listSessionSpeakersRequest(sessionId);
-            return { sessionId, speakers };
-          })
-        );
-        speakersResults.forEach((result) => {
-          if (result.status === "fulfilled") {
-            speakersBySession[result.value.sessionId] = result.value.speakers;
-          }
-        });
-
-        setMetrics(
-          buildMetricsData({
-            events,
-            sessionsByEvent,
-            speakersBySession
-          })
-        );
-      } catch (err: any) {
-        const message = getErrorMessage(err, "No fue posible cargar las métricas.");
-        setError(message);
-        await notifyError(message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void load();
+    void loadMetrics(filters);
   }, []);
+
+  const onApplyFilters = () => {
+    void loadMetrics(filters);
+  };
+
+  const onClearFilters = () => {
+    const emptyFilters: FiltersState = {
+      startDate: "",
+      endDate: "",
+      eventStatus: "",
+      organizerId: ""
+    };
+    setFilters(emptyFilters);
+    void loadMetrics(emptyFilters);
+  };
 
   const kpiCards = useMemo(() => {
     if (!metrics) return [];
@@ -266,37 +144,42 @@ export function MetricsPage() {
       {
         label: "Eventos",
         value: metrics.totals.events,
-        help: "Total de eventos registrados en la plataforma, sin importar su estado."
+        help: "Total de eventos dentro de los filtros activos."
       },
       {
         label: "Sesiones",
         value: metrics.totals.sessions,
-        help: "Total de sesiones creadas y asociadas a eventos."
+        help: "Total de sesiones relacionadas a los eventos filtrados."
       },
       {
-        label: "Asignaciones de ponentes",
-        value: metrics.totals.speakerAssignments,
-        help: "Cantidad total de relaciones sesión-ponente existentes."
+        label: "Inscritos",
+        value: metrics.totals.registered_attendees,
+        help: "Total de registros activos de asistencia."
       },
       {
-        label: "Promedio sesiones / evento",
-        value: metrics.totals.avgSessionsPerEvent,
-        help: "Promedio de sesiones por evento: total de sesiones dividido por total de eventos."
+        label: "Cancelaciones",
+        value: metrics.totals.cancelled_registrations,
+        help: "Registros que actualmente están en estado cancelado."
       },
       {
-        label: "Promedio ponentes / sesión",
-        value: metrics.totals.avgSpeakersPerSession,
-        help: "Promedio de ponentes asignados por sesión."
+        label: "Capacidad total",
+        value: metrics.totals.total_capacity,
+        help: "Suma de capacidad máxima de los eventos filtrados."
+      },
+      {
+        label: "Ocupación global",
+        value: `${metrics.totals.occupancy_rate}%`,
+        help: "Inscritos activos sobre capacidad total disponible."
+      },
+      {
+        label: "Tasa de cancelación",
+        value: `${metrics.totals.cancellation_rate}%`,
+        help: "Cancelaciones sobre el total de registros (inscritos + cancelados)."
       },
       {
         label: "Tasa de publicación",
-        value: `${metrics.totals.publishedRate}%`,
-        help: "Porcentaje de eventos en estado publicado sobre el total de eventos."
-      },
-      {
-        label: "Eventos próximos",
-        value: metrics.totals.upcomingEvents,
-        help: "Eventos cuya fecha de inicio aún no ocurre."
+        value: `${metrics.totals.published_rate}%`,
+        help: "Porcentaje de eventos publicados frente al total analizado."
       }
     ];
   }, [metrics]);
@@ -304,6 +187,56 @@ export function MetricsPage() {
   return (
     <div className="container">
       <h1 className="my-6">Métricas</h1>
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>Filtros analíticos</CardTitle>
+          <CardDescription>
+            Acota el análisis por rango de fechas, estado de evento y organizador para tomar decisiones puntuales.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <Input
+            type="date"
+            value={filters.startDate}
+            onChange={(e) => setFilters((prev) => ({ ...prev, startDate: e.target.value }))}
+          />
+          <Input
+            type="date"
+            value={filters.endDate}
+            onChange={(e) => setFilters((prev) => ({ ...prev, endDate: e.target.value }))}
+          />
+          <select
+            value={filters.eventStatus}
+            onChange={(e) => setFilters((prev) => ({ ...prev, eventStatus: e.target.value }))}
+          >
+            <option value="">Todos los estados</option>
+            <option value="draft">{eventStatusLabel("draft")}</option>
+            <option value="published">{eventStatusLabel("published")}</option>
+            <option value="cancelled">{eventStatusLabel("cancelled")}</option>
+            <option value="finished">{eventStatusLabel("finished")}</option>
+          </select>
+          <select
+            value={filters.organizerId}
+            onChange={(e) => setFilters((prev) => ({ ...prev, organizerId: e.target.value }))}
+          >
+            <option value="">Todos los organizadores</option>
+            {(metrics?.organizers || []).map((organizer) => (
+              <option key={organizer.id} value={organizer.id}>
+                {organizer.name}
+              </option>
+            ))}
+          </select>
+          <div className="flex gap-2">
+            <Button type="button" className="h-10 px-3" onClick={onApplyFilters}>
+              Aplicar
+            </Button>
+            <Button type="button" variant="outline" className="h-10 px-3" onClick={onClearFilters}>
+              Limpiar
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {loading && <SectionSpinner label="Cargando métricas..." />}
       {!loading && error && <p className="error">{error}</p>}
 
@@ -328,17 +261,12 @@ export function MetricsPage() {
           <div className="grid gap-4 xl:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <MetricTitle
-                    title="Eventos por estado"
-                    description="Muestra cuántos eventos hay en cada estado: borrador, publicado, cancelado y finalizado."
-                  />
-                </CardTitle>
-                <CardDescription>Distribución actual del ciclo de vida de eventos.</CardDescription>
+                <CardTitle>Eventos por estado</CardTitle>
+                <CardDescription>Distribución del ciclo de vida de eventos.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={eventsByStatusConfig} className="h-[280px] w-full">
-                  <BarChart accessibilityLayer data={metrics.eventsByStatus}>
+                  <BarChart accessibilityLayer data={metrics.events_by_status.map((item) => ({ ...item, label: eventStatusLabel(item.status) }))}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
@@ -350,21 +278,22 @@ export function MetricsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <MetricTitle
-                    title="Sesiones por estado"
-                    description="Distribución de sesiones según su estado operativo: programada, en progreso, finalizada o cancelada."
-                  />
-                </CardTitle>
-                <CardDescription>Cómo están distribuidas las sesiones en la plataforma.</CardDescription>
+                <CardTitle>Sesiones por estado</CardTitle>
+                <CardDescription>Cómo está la operación de sesiones.</CardDescription>
               </CardHeader>
               <CardContent>
                 <ChartContainer config={sessionsByStatusConfig} className="h-[280px] w-full">
                   <PieChart accessibilityLayer>
                     <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                    <Pie data={metrics.sessionsByStatus} dataKey="total" nameKey="label" innerRadius={60} outerRadius={95}>
-                      {metrics.sessionsByStatus.map((entry) => (
-                        <Cell key={`cell-${entry.status}`} fill={`var(--color-${entry.status})`} />
+                    <Pie
+                      data={metrics.sessions_by_status.map((item) => ({ ...item, label: sessionStatusLabel(item.status) }))}
+                      dataKey="total"
+                      nameKey="label"
+                      innerRadius={60}
+                      outerRadius={95}
+                    >
+                      {metrics.sessions_by_status.map((entry) => (
+                        <Cell key={`session-cell-${entry.status}`} fill={`var(--color-${entry.status})`} />
                       ))}
                     </Pie>
                     <ChartLegend content={<ChartLegendContent />} />
@@ -375,26 +304,44 @@ export function MetricsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <MetricTitle
-                    title="Eventos creados por mes"
-                    description="Tendencia temporal de creación de eventos agrupada por mes."
-                  />
-                </CardTitle>
-                <CardDescription>Tendencia de creación en los últimos meses.</CardDescription>
+                <CardTitle>Registros por estado</CardTitle>
+                <CardDescription>Balance entre inscritos, cancelados y lista de espera.</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={eventsByMonthConfig} className="h-[280px] w-full">
-                  <LineChart accessibilityLayer data={metrics.eventsByMonth}>
+                <ChartContainer config={registrationsByStatusConfig} className="h-[280px] w-full">
+                  <BarChart
+                    accessibilityLayer
+                    data={metrics.registrations_by_status.map((item) => ({ ...item, label: registrationStatusLabel(item.status) }))}
+                  >
                     <CartesianGrid vertical={false} />
-                    <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                    <Bar dataKey="total" fill="var(--color-registered)" radius={8} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Inscripciones por mes</CardTitle>
+                <CardDescription>Tendencia temporal de demanda/asistencia.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={monthTrendConfig} className="h-[280px] w-full">
+                  <LineChart
+                    accessibilityLayer
+                    data={metrics.registrations_by_month.map((item) => ({ ...item, label: formatMonthLabel(item.month) }))}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="label" tickLine={false} axisLine={false} tickMargin={8} />
                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
                     <Line
-                      dataKey="eventos"
+                      dataKey="total"
                       type="monotone"
-                      stroke="var(--color-eventos)"
+                      stroke="var(--color-total)"
                       strokeWidth={2}
-                      dot={{ r: 4, fill: "var(--color-eventos)" }}
+                      dot={{ r: 4, fill: "var(--color-total)" }}
                     />
                   </LineChart>
                 </ChartContainer>
@@ -403,22 +350,41 @@ export function MetricsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <MetricTitle
-                    title="Top organizadores"
-                    description="Ranking de usuarios organizadores con mayor número de eventos creados."
-                  />
-                </CardTitle>
-                <CardDescription>Usuarios con más eventos creados.</CardDescription>
+                <CardTitle>Eventos con mayor ocupación</CardTitle>
+                <CardDescription>Qué eventos están aprovechando mejor su capacidad.</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={topOrganizersConfig} className="h-[280px] w-full">
-                  <BarChart accessibilityLayer data={metrics.topOrganizers} layout="vertical" margin={{ left: 24 }}>
+                <ChartContainer config={occupancyConfig} className="h-[300px] w-full">
+                  <BarChart
+                    accessibilityLayer
+                    data={metrics.event_occupancy.slice(0, 8).map((item) => ({
+                      event: item.event_name,
+                      occupancy: item.occupancy_rate
+                    }))}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="event" tickLine={false} axisLine={false} tickMargin={8} />
+                    <YAxis domain={[0, 100]} tickLine={false} axisLine={false} />
+                    <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                    <Bar dataKey="occupancy" fill="var(--color-occupancy)" radius={8} />
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Top organizadores</CardTitle>
+                <CardDescription>Organizadores con mayor volumen de eventos.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ChartContainer config={organizerConfig} className="h-[300px] w-full">
+                  <BarChart accessibilityLayer data={metrics.top_organizers.slice(0, 8)} layout="vertical" margin={{ left: 24 }}>
                     <CartesianGrid horizontal={false} />
                     <XAxis type="number" hide />
                     <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} width={120} />
                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                    <Bar dataKey="eventos" fill="var(--color-eventos)" radius={8} />
+                    <Bar dataKey="events" fill="var(--color-events)" radius={8} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -426,21 +392,16 @@ export function MetricsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <MetricTitle
-                    title="Top ponentes activos"
-                    description="Ranking de ponentes con más asignaciones a sesiones."
-                  />
-                </CardTitle>
-                <CardDescription>Más asignaciones en sesiones.</CardDescription>
+                <CardTitle>Top ponentes activos</CardTitle>
+                <CardDescription>Ponentes con más participación en sesiones.</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={topSpeakersConfig} className="h-[280px] w-full">
-                  <BarChart accessibilityLayer data={metrics.topSpeakers}>
+                <ChartContainer config={speakersConfig} className="h-[300px] w-full">
+                  <BarChart accessibilityLayer data={metrics.top_speakers.slice(0, 10)}>
                     <CartesianGrid vertical={false} />
                     <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                    <Bar dataKey="sesiones" fill="var(--color-sesiones)" radius={8} />
+                    <Bar dataKey="sessions" fill="var(--color-sessions)" radius={8} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -448,21 +409,16 @@ export function MetricsPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>
-                  <MetricTitle
-                    title="Eventos con más sesiones"
-                    description="Eventos con mayor cantidad de sesiones asociadas."
-                  />
-                </CardTitle>
-                <CardDescription>Ranking de eventos por número de sesiones.</CardDescription>
+                <CardTitle>Eventos con más sesiones</CardTitle>
+                <CardDescription>Carga operativa de cada evento.</CardDescription>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={sessionsPerEventConfig} className="h-[280px] w-full">
-                  <BarChart accessibilityLayer data={metrics.sessionsPerEvent}>
+                <ChartContainer config={sessionsPerEventConfig} className="h-[300px] w-full">
+                  <BarChart accessibilityLayer data={metrics.sessions_per_event.slice(0, 10)}>
                     <CartesianGrid vertical={false} />
-                    <XAxis dataKey="event" tickLine={false} axisLine={false} tickMargin={8} />
+                    <XAxis dataKey="event_name" tickLine={false} axisLine={false} tickMargin={8} />
                     <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-                    <Bar dataKey="sesiones" fill="var(--color-sesiones)" radius={8} />
+                    <Bar dataKey="sessions" fill="var(--color-sessions)" radius={8} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
