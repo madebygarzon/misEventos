@@ -197,6 +197,10 @@ export function EventDetailPage() {
     if (!id) return false;
     return registrations.some((item) => item.event_id === id && item.status === "registered");
   }, [registrations, id]);
+  const registeredCount = currentEvent?.registered_count ?? 0;
+  const availableSlots = currentEvent ? Math.max(0, currentEvent.capacity - registeredCount) : 0;
+  const isEventFull = currentEvent ? (currentEvent.is_full ?? availableSlots <= 0) : false;
+  const fullCapacityMessage = "Este evento ya alcanzó su capacidad máxima.";
 
   const resetSessionForm = () => {
     setEditingSessionId(null);
@@ -424,6 +428,10 @@ export function EventDetailPage() {
 
   const onRegister = async () => {
     if (!id) return;
+    if (isEventFull) {
+      setRegError(fullCapacityMessage);
+      return;
+    }
     setRegLoading(true);
     setRegError(null);
     setRegMessage(null);
@@ -604,7 +612,7 @@ export function EventDetailPage() {
             <CardTitle className=" text-2xl font-semibold">{currentEvent.name}</CardTitle>
             <div className="actions sm:justify-end">
               {isAuthenticated && !isRegistered && (
-                <Button onClick={onRegister} disabled={regLoading}>Inscribirme</Button>
+                <Button onClick={onRegister} disabled={regLoading || isEventFull}>Inscribirme</Button>
               )}
               {isAuthenticated && isRegistered && (
                 <Button variant="outline" onClick={onCancel} disabled={regLoading}>
@@ -655,7 +663,15 @@ export function EventDetailPage() {
                     {eventStatusLabel(currentEvent.status)}
                   </span>
                 </div>
-                <p className="text-sm"><strong>Capacidad:</strong> {currentEvent.capacity}</p>
+                <p className="text-sm">
+                  <strong>Capacidad:</strong> {currentEvent.capacity}
+                </p>
+                <p className="text-sm">
+                  <strong>Inscritos:</strong> {registeredCount}
+                </p>
+                <p className="text-sm">
+                  <strong>Cupos disponibles:</strong> {availableSlots}
+                </p>
                 <p className="text-sm"><strong>Sesiones:</strong> {sessions.length}</p>
                 <div className="space-y-2">
                   <p className="text-sm font-medium">Datos de las sesiones:</p>
@@ -886,6 +902,9 @@ export function EventDetailPage() {
                     Volver a eventos
                   </Link>
                 </Button>
+                {isEventFull && (
+                  <p className="text-sm font-medium text-rose-600">{fullCapacityMessage}</p>
+                )}
               {!isAuthenticated && (
                 <Button asChild variant="outline" size="sm" className="w-fit">
                   <Link to="/login">Inicia sesión para poder inscribirte al evento.</Link>
@@ -893,7 +912,7 @@ export function EventDetailPage() {
               )}
               </div>
               {regMessage && <p className="success">{regMessage}</p>}
-              {regError && <p className="error">{regError}</p>}
+              {regError && regError !== fullCapacityMessage && <p className="error">{regError}</p>}
             </div>
 
             {sessionsLoading && <SectionSpinner label="Cargando sesiones..." />}

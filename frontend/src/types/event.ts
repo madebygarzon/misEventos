@@ -12,6 +12,8 @@ export type EventItem = {
   start_date: string;
   end_date: string;
   capacity: number;
+  registered_count?: number;
+  is_full?: boolean;
   status: "draft" | "published" | "cancelled" | "finished";
   created_at: string;
   updated_at: string;

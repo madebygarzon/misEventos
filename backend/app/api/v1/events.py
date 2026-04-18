@@ -6,6 +6,7 @@ from sqlmodel import Session
 from app.api.deps import get_current_user, get_db_session, require_roles
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
+from app.repositories.registration_repository import RegistrationRepository
 from app.repositories.user_repository import UserRepository
 from app.schemas.event import EventCreate, EventListResponse, EventResponse, EventUpdate
 from app.services.event_service import EventService
@@ -15,6 +16,7 @@ router = APIRouter(prefix="/events", tags=["events"])
 
 def _to_response(event, session: Session) -> EventResponse:
     organizer = UserRepository(session).get_by_id(event.organizer_id)
+    registered_count = RegistrationRepository(session).count_registered_by_event(event.id)
     return EventResponse(
         id=str(event.id),
         organizer_id=str(event.organizer_id),
@@ -29,6 +31,8 @@ def _to_response(event, session: Session) -> EventResponse:
         start_date=event.start_date,
         end_date=event.end_date,
         capacity=event.capacity,
+        registered_count=registered_count,
+        is_full=registered_count >= event.capacity,
         status=event.status,
         created_at=event.created_at,
         updated_at=event.updated_at,

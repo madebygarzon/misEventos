@@ -45,6 +45,8 @@ class EventResponse(BaseModel):
     start_date: datetime
     end_date: datetime
     capacity: int
+    registered_count: int = 0
+    is_full: bool = False
     status: str
     created_at: datetime
     updated_at: datetime
