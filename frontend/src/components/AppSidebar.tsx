@@ -21,7 +21,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { Separator } from "@/components/ui/separator";
 import { useAuthStore } from "@/store/authStore";
 
 type NavigationItem = {
@@ -134,29 +133,6 @@ export function AppSidebar() {
               </DropdownMenu>
             </SidebarMenuItem>
           )}
-          <SidebarMenuItem>
-            <div className="mt-6 w-full px-2">
-              <Separator className="mb-3" />
-              <div className="flex h-5 items-center justify-center gap-4 text-sm text-sidebar-foreground/80">
-                <a
-                  href="http://localhost:8000/docs"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="hover:text-sidebar-foreground"
-                >
-                  Apis
-                </a>
-                <Separator orientation="vertical" />
-                <Link to="/manual" target="_blank" rel="noreferrer" className="hover:text-sidebar-foreground">
-                  Manual
-                </Link>
-                <Separator orientation="vertical" />
-                <Link to="/source" target="_blank" rel="noreferrer" className="hover:text-sidebar-foreground">
-                  Source
-                </Link>
-              </div>
-            </div>
-          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />

@@ -4,6 +4,13 @@ Este documento es mi guía personal para construir y entregar el MVP de **Mis Ev
 Mi foco es una sola entrega funcional y sólida.
 
 ---
+## Ítems de documentación
+
+- API Doc: [http://localhost:8000/docs](http://localhost:8000/docs)
+- Manual de usuario: [http://localhost:5173/manual](http://localhost:5173/manual)
+- Documento de entrega: [http://localhost:5173/source](http://localhost:5173/source)
+
+---
 ### Contexto del requerimiento
 
 **Cliente:** Mis Eventos.  
