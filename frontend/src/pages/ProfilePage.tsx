@@ -450,9 +450,8 @@ export function ProfilePage() {
 
   return (
     <div className="container">
-      <h1>Mi perfil</h1>
-      <p className="muted">Panel personal con secciones por rol.</p>
-
+      <h1 className="my-6">Mi perfil</h1>
+     
       <div className="mt-20 grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card>
           <CardHeader>
