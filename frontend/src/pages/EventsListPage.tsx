@@ -125,7 +125,7 @@ export function EventsListPage() {
               {(loading || !events.length) ? (
                 <div className="mx-auto flex w-max gap-4 pb-0">
                   {Array.from({ length: 4 }).map((_, index) => (
-                    <Card key={`home-slide-skeleton-${index}`} className="w-[290px] shrink-0 pt-0">
+                    <Card key={`home-slide-skeleton-${index}`} className="w-72.5 shrink-0 pt-0">
                       <Skeleton className="h-36 w-full" />
                       <CardHeader>
                         <Skeleton className="h-6 w-3/4" />
@@ -143,7 +143,7 @@ export function EventsListPage() {
               ) : (
                 <div className="mx-auto flex w-max gap-4 pb-0">
                   {loopingEvents.map((event, index) => (
-                    <Card key={`${event.id}-${index}`} className="w-[290px] shrink-0 pt-0">
+                    <Card key={`${event.id}-${index}`} className="w-72.5 shrink-0 pt-0">
                       <EventFeaturedImage
                         name={event.name}
                         alt={event.featured_image_alt}

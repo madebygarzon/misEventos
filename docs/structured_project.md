@@ -35,27 +35,107 @@ Mi foco es una sola entrega funcional y sólida.
 - pruebas mínimas de backend.
 
 ---
-### Flujo crítico de usuarios a implementar
+### Flujos de usuario, permisos y componentes
 
-#### 1. Visitante no autenticado
+Esta sección define la navegación, componentes compartidos y permisos por rol para el MVP.
 
-Un visitante entra, ve el listado, busca eventos y revisa detalles.  
-Si quiere hacer acciones privadas (como inscribirse), lo llevo a login/registro.
+#### Reglas globales
 
-#### 2. Asistente autenticado
+- Tipos de usuario: visitante (sin login), `attendee`, `organizer`, `admin`.
+- El registro crea usuarios con rol por defecto `attendee`.
+- La consulta de eventos y detalle es pública; la inscripción requiere autenticación.
+- La inscripción solo se habilita si hay cupos disponibles y no existe inscripción previa del mismo usuario.
+- Los ítems del menú lateral y las acciones visibles cambian según el rol (RBAC).
 
-El usuario se registra o inicia sesión, revisa eventos, se inscribe si hay cupo y luego puede ver sus eventos inscritos desde su perfil.
+#### Componentes compartidos
 
-#### 3. Organizador
+1. Menú lateral:
+   - Renderiza opciones de navegación según rol.
+2. Inicio:
+   - Botón `Ver todos los eventos` que redirige a `Eventos`.
+   - Carrusel de los últimos 12 eventos.
+   - El carrusel se pausa al pasar el cursor.
+   - Cada tarjeta incluye botón `Ver detalles`.
+3. Eventos:
+   - Buscador por nombre o coincidencia parcial.
+   - Filtro por fecha.
+   - Grid de eventos con paginación.
+   - Cada tarjeta incluye botón `Ver detalle`.
+4. Detalle de evento:
+   - Muestra: nombre, imagen destacada, texto alternativo, fecha, organizador, ubicación, descripción, capacidad y sesiones.
+   - Sesiones con: horario, estado y ponentes asignados.
+   - Botón `Volver a eventos`.
+5. ¿Soy oferente?:
+   - Buscador por nombre o coincidencia parcial.
+   - Devuelve coincidencias donde el oferente esté agendado: evento, fecha y sesión.
+   - Botón `Ver evento`.
+6. Autenticación:
+   - Formularios de `Iniciar sesión` y `Registrarme`.
+   - Acción `Salir` para cerrar sesión.
 
-El organizador crea/edita/elimina eventos, define fechas, capacidad y estado.  
-También crea sesiones, ajusta horarios y asigna ponentes.
+#### Flujo por tipo de usuario
 
-#### 4. Administrador
+##### 1. Usuario visitante (sin autenticación)
 
-El rol `admin` tiene permisos globales de gestión.  
-En la implementación actual sí dejé RBAC activo con tres roles: `admin`, `organizer`, `attendee`.
-Desde perfil, el admin también puede gestionar usuarios y cambiar su rol.
+- Menú lateral: `Inicio`, `Eventos`, `¿Soy oferente?`, `Acceder`.
+- En `Inicio`: ve carrusel, botón `Ver todos los eventos` y botón `Iniciar sesión`.
+- En `Eventos`: puede buscar, filtrar, paginar y abrir detalle.
+- En `Detalle de evento`: ve botón para iniciar sesión y poder inscribirse.
+- `Acceder` abre menú flotante con: `Iniciar sesión`, `Registrarme`, `¿Soy oferente?`.
+
+##### 2. Usuario autenticado con rol `attendee`
+
+- Menú lateral: `Inicio`, `Eventos`, `¿Soy oferente?`, `Mi perfil`, `Salir`.
+- En `Inicio`: saludo personalizado, carrusel y acceso a eventos.
+- En `Eventos` y `Detalle de evento`: puede consultar e inscribirse si hay capacidad.
+- En `Mi perfil`:
+  - Puede editar nombre y contraseña (validando contraseña actual).
+  - Ve `Agenda de eventos` con sus eventos inscritos y acceso al detalle.
+- `Salir` cierra la sesión.
+
+##### 3. Usuario autenticado con rol `organizer`
+
+- Menú lateral: `Inicio`, `Eventos`, `¿Soy oferente?`, `Crear evento`, `Mi perfil`, `Salir`.
+- Hereda todas las capacidades de `attendee`.
+- En `Crear evento`: puede crear eventos con nombre, fecha, ubicación, capacidad, estado, imagen destacada, texto alternativo y descripción.
+- En `Eventos` y `Detalle de evento`:
+  - Si es creador del evento: `Editar evento`, `Eliminar evento`, `Crear sesión`, `Ver sesión` y `Editar sesión`.
+  - Si no es creador: mantiene acciones de consulta e inscripción según reglas.
+- En `Mi perfil`:
+  - Datos personales (nombre y contraseña).
+  - `Eventos organizados por mí`.
+  - `Agenda de eventos`.
+
+##### 4. Usuario autenticado con rol `admin`
+
+- Menú lateral: `Inicio`, `Eventos`, `¿Soy oferente?`, `Métricas`, `Crear evento`, `Mi perfil`, `Salir`.
+- Hereda capacidades de `attendee` y `organizer`.
+- Tiene control global sobre eventos y sesiones:
+  - Crear, editar y eliminar cualquier evento.
+  - Crear, ver y editar sesiones de cualquier evento.
+- En `Métricas`: visualiza indicadores y resumen de datos relevantes de eventos.
+- En `Mi perfil`:
+  - Datos personales (nombre y contraseña).
+  - `Eventos organizados por mí`.
+  - `Agenda de eventos`.
+  - `Gestión de usuarios`: lista de usuarios y cambio de rol.
+  - `Todos los eventos`: listado global con filtros por nombre, fecha, estado, organizador y orden (alfabético/fecha).
+- `Salir` cierra la sesión.
+
+#### Matriz resumida de permisos
+
+| Módulo / Acción | Visitante | `attendee` | `organizer` | `admin` |
+|---|---|---|---|---|
+| Ver inicio, eventos y detalle | Sí | Sí | Sí | Sí |
+| Inscribirse a evento | No | Sí | Sí | Sí |
+| Consultar `¿Soy oferente?` | Sí | Sí | Sí | Sí |
+| Editar perfil (nombre/contraseña) | No | Sí | Sí | Sí |
+| Crear evento | No | No | Sí | Sí |
+| Editar/eliminar evento propio | No | No | Sí | Sí |
+| Editar/eliminar cualquier evento | No | No | No | Sí |
+| Gestionar sesiones | No | No | Solo en eventos propios | Sí |
+| Ver métricas | No | No | No | Sí |
+| Gestionar usuarios y roles | No | No | No | Sí |
 
 ---
 ## Reglas de negocio
