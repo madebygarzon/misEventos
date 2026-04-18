@@ -1,14 +1,16 @@
+# Documento de entrega:
+
 ## Guía para desarrollar el proyecto "Prueba técnica Desarrollador Backend" para tusdatos.co
 
-Este documento es mi guía personal para construir y entregar el MVP de **Mis Eventos**.  
+Este documento es mi guía personal para construir y entregar el MVP de la aplicación Web FullStack para **Mis Eventos**, como parte de la prueba técnica para la vacante de Desarrollador Python. 
 Mi foco es una sola entrega funcional y sólida.
 
 ---
-## Ítems de documentación
+## Documentación 
 
 - API Doc: [http://localhost:8000/docs](http://localhost:8000/docs)
 - Manual de usuario: [http://localhost:5173/manual](http://localhost:5173/manual)
-- Documento de entrega: [http://localhost:5173/source](http://localhost:5173/source)
+- Documento de entrega versión Web: [http://localhost:5173/source](http://localhost:5173/source)
 
 ---
 ### Contexto del requerimiento
@@ -37,7 +39,7 @@ Mi foco es una sola entrega funcional y sólida.
 - consulta de eventos inscritos por usuario.
 - gestión de usuarios y roles desde perfil admin.
 - validaciones críticas de negocio.
-- Swagger/OpenAPI disponible.
+- Swagger disponible.
 - ejecución con Docker Compose.
 - pruebas mínimas de backend.
 
@@ -191,32 +193,6 @@ Estas variables son referencia para base de datos local; en Docker Compose el se
 | `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | URL base del backend consumida por el cliente React |
 
 ---
-## Backlog de métricas (tareas a realizar)
-
-Estas tareas describen los indicadores que debo implementar o fortalecer en el módulo de métricas del frontend/backend.
-
-- [ ] Implementar métrica de total de eventos creados por período.
-- [ ] Implementar métrica de eventos por estado (`draft`, `published`, `cancelled`, `finished`).
-- [ ] Implementar tasa de publicación (`eventos publicados / eventos creados`).
-- [ ] Implementar capacidad total vs cupos ocupados por evento.
-- [ ] Implementar tasa de ocupación por evento (`inscritos / capacidad`).
-- [ ] Implementar ranking de eventos con mayor número de inscripciones.
-- [ ] Implementar métrica de velocidad de inscripción (tiempo hasta completar cupos).
-- [ ] Implementar serie temporal de inscripciones por día/semana/mes.
-- [ ] Implementar tasa de cancelación de inscripciones.
-- [ ] Implementar no-show rate (`inscritos vs asistentes`) cuando exista registro de asistencia.
-- [ ] Implementar promedio y distribución de sesiones por evento.
-- [ ] Implementar sesiones por estado (`scheduled`, `in_progress`, `finished`, `cancelled`).
-- [ ] Implementar promedio de ponentes por sesión.
-- [ ] Implementar ranking de ponentes más activos (más sesiones asignadas).
-- [ ] Implementar ranking de organizadores más activos (más eventos creados).
-- [ ] Implementar conversión de detalle a inscripción (`vista detalle -> registro`), si se captura analítica de vistas.
-- [ ] Implementar tiempo promedio entre creación del evento y fecha de inicio.
-- [ ] Implementar alerta de eventos sin sesiones asociadas.
-- [ ] Implementar alerta de eventos con baja ocupación (ejemplo: menor a 30%).
-- [ ] Implementar retención de usuarios (`usuarios inscritos en más de un evento`).
-
----
 ### Modelo base de datos
 
 ```mermaid
@@ -267,6 +243,7 @@ erDiagram
       text description
       timestamp start_time
       timestamp end_time
+      int capacity
       string status "scheduled|in_progress|finished|cancelled"
       timestamp created_at
       timestamp updated_at
@@ -352,7 +329,8 @@ erDiagram
 - `events(name)`.
 - `events(status)`.
 - `events(organizer_id)`.
-- `sessions(event_id, start_time)`.
+- `sessions(event_id)`.
+- `sessions(status)`.
 - `registrations(event_id)`.
 - `registrations(user_id)`.
 - `roles(name)`.
@@ -397,28 +375,45 @@ Con esto logro un sistema simple de desplegar, fácil de probar y suficientement
 
 #### S — Responsabilidad única
 
-- `api` solo coordina request/response.
-- `service` concentra reglas de negocio.
-- `repository` hace persistencia.
+- Estado actual:
+  - `service` concentra reglas de negocio.
+  - `repository` hace persistencia.
+  - La capa `api` coordina request/response en casi todos los módulos.
+- Ajuste pendiente identificado:
+  - En `events`, la función de mapeo de respuesta hace consultas adicionales (organizador e inscritos).  
+    Para cumplir SRP de forma estricta, debo mover ese armado enriquecido al `service` o a un assembler dedicado.
 
 #### O — Abierto/cerrado
 
-- extender comportamiento con nuevas clases/estrategias.
-- evitar crecer lógica con `if/else` gigantes.
+- Estado actual:
+  - El sistema se extiende creando nuevos módulos/servicios/endpoints (ejemplo: métricas) sin romper flujos existentes.
+  - No tengo bloques grandes de `if/else` en controladores.
+- Decisión:
+  - Mantengo este principio como cumplido para el alcance MVP.
 
 #### L — Sustitución
 
-- cualquier implementación debe cumplir el mismo contrato esperado.
+- Estado actual:
+  - No estoy usando jerarquías complejas ni herencia polimórfica relevante.
+  - El principio no está violado, pero tampoco es un eje fuerte en esta versión.
+- Decisión:
+  - Lo mantengo controlado para MVP y lo profundizaré si introduzco contratos formales de repositorio.
 
 #### I — Segregación de interfaces
 
-- interfaces pequeñas por caso de uso.
-- separar lectura y escritura cuando tenga sentido.
+- Estado actual:
+  - Separé responsabilidades por módulo y por capa.
+  - No definí interfaces/puertos formales por caso de uso (lectura/escritura).
+- Ajuste pendiente identificado:
+  - Si evoluciona el proyecto, debo introducir contratos explícitos para evitar depender de repositorios “grandes”.
 
 #### D — Inversión de dependencias
 
-- servicios dependen de abstracciones, no de implementaciones concretas.
-- inyección de dependencias para facilitar pruebas.
+- Estado actual:
+  - Sí uso inyección de dependencias (los servicios reciben repositorios por constructor).
+  - Pero los servicios dependen de clases concretas de repositorio, no de abstracciones.
+- Ajuste pendiente identificado:
+  - Para cumplir DIP en estricto, debo definir interfaces (protocolos/ABC) y tipar los servicios contra esas abstracciones.
 
 #### Anti-patrones evitados
 
@@ -426,6 +421,13 @@ Con esto logro un sistema simple de desplegar, fácil de probar y suficientement
 - servicios ejecutando SQL directo.
 - repositorios ocultando reglas de negocio.
 - acoplar lógica de dominio a detalles del framework.
+
+#### Resumen honesto para esta entrega
+
+- En esta versión MVP, el diseño es limpio y mantenible, pero no “SOLID puro” al 100%.
+- Tengo cumplimiento sólido en separación por capas y encapsulamiento de reglas de negocio.
+- Tengo deuda técnica consciente en SRP (caso puntual de `events`) y en DIP/ISP (falta de interfaces formales).
+- Esta deuda no bloquea la entrega funcional del MVP, pero ya está identificada para refactor posterior.
 
 ---
 ## Stack a usar
@@ -457,46 +459,46 @@ Con esto logro un sistema simple de desplegar, fácil de probar y suficientement
 
 ### Backend técnico
 
-- **Python 3.12** -> `python:3.12` en Dockerfile backend.
-- **FastAPI o Flask** -> FastAPI.
-- **SQLAlchemy + SQLModel (o Core)** -> SQLModel sobre SQLAlchemy.
-- **PostgreSQL** -> servicio `db` en Docker Compose.
-- **Poetry** -> gestión de dependencias backend.
-- **Alembic** -> versionado y ejecución de migraciones.
-- **Tests unitarios (pytest)** -> suite mínima para auth/eventos/sesiones/inscripciones/usuarios.
-- **Swagger/OpenAPI** -> documentación automática de FastAPI.
+- **Python 3.12** -> `Cumplido` (`python:3.12` en Dockerfile backend).
+- **FastAPI o Flask** -> `Cumplido` (FastAPI).
+- **SQLAlchemy + SQLModel (o Core)** -> `Cumplido` (SQLModel sobre SQLAlchemy).
+- **PostgreSQL** -> `Cumplido` (servicio `db` en Docker Compose).
+- **Poetry** -> `Cumplido` (backend gestionado con Poetry).
+- **Alembic** -> `Cumplido` (migraciones versionadas y aplicables).
+- **Tests unitarios (pytest)** -> `Cumplido` (suite backend para auth/eventos/sesiones/inscripciones/usuarios/ponentes).
+- **Swagger/OpenAPI** -> `Cumplido` (`/docs` activo en FastAPI).
 
 ### Frontend técnico
 
-- **React, Vue o Angular** -> React.
-- **Router** -> React Router.
-- **Manejador de estado** -> Zustand.
-- **Peticiones HTTP** -> Axios.
-- **Tests unitarios** -> Vitest.
+- **React, Vue o Angular** -> `Cumplido` (React + Vite).
+- **Router** -> `Cumplido` (React Router).
+- **Manejador de estado** -> `Cumplido` (Zustand).
+- **Peticiones HTTP** -> `Cumplido` (Axios).
+- **Tests unitarios** -> `Cumplido` (Vitest configurado y pruebas en frontend).
 
 ### Entorno
 
-- **Docker + Docker Compose** -> servicios backend/frontend/db.
-- **Variables de entorno** -> `.env` y `.env.example` por servicio.
+- **Docker + Docker Compose** -> `Cumplido` (servicios backend/frontend/db).
+- **Variables de entorno** -> `Cumplido` (`.env` y `.env.example` por servicio + valores reales centralizados en `docs/structured_project.md`).
 
 ### Optimización y calidad
 
-- **Optimización de imágenes** -> WebP + compresión + variantes por tamaño (desktop/tablet/mobile).
-- **Lazy loading** -> `React.lazy` + `Suspense` + carga diferida de rutas principales.
-- **Minificación de código** -> build de producción con Vite (minify activo).
-- **Caching** -> cache en frontend para consultas frecuentes o Redis en backend (si incluyo capa adicional).
-- **Linting** -> ESLint (frontend) + Ruff/Black (backend).
-- **Testing** -> pytest (backend) + Vitest (frontend).
+- **Optimización de imágenes** -> `Cumplido` (WebP + compresión + variantes por tamaño).
+- **Lazy loading** -> `Pendiente` (rutas actuales cargan de forma directa; falta `React.lazy` + `Suspense`).
+- **Minificación de código** -> `Cumplido` (build de producción con Vite).
+- **Caching** -> `Parcial` (no hay capa explícita de caché de datos; se usa comportamiento estándar del cliente/navegador).
+- **Linting** -> `Parcial` (ESLint en frontend y Ruff en backend; no está Black integrado).
+- **Testing** -> `Cumplido` (pytest backend + Vitest frontend).
 
 ### UI/UX mínimo a cumplir
 
-- diseño limpio, usable y consistente.
-- responsive en móvil/tablet/desktop.
-- loading states (spinner/skeleton) en vistas con carga.
-- feedback visual para acciones: éxito/error/validación.
+- diseño limpio, usable y consistente -> `Cumplido`.
+- responsive en móvil/tablet/desktop -> `Cumplido`.
+- loading states (spinner/skeleton) en vistas con carga -> `Cumplido`.
+- feedback visual para acciones: éxito/error/validación -> `Cumplido`.
 
 ---
-## API a construir
+## API final construida
 
 ### Auth
 
@@ -532,10 +534,50 @@ Filtros:
 - `GET /api/v1/users/me/registrations`
 - `DELETE /api/v1/events/{event_id}/register`
 
+### Users
+
+- `PATCH /api/v1/users/me`
+
 ### Users (admin)
 
 - `GET /api/v1/users`
 - `PATCH /api/v1/users/{user_id}/role`
+
+### Speakers
+
+- `GET /api/v1/speakers`
+- `GET /api/v1/speakers/{speaker_id}`
+- `POST /api/v1/speakers`
+- `PUT /api/v1/speakers/{speaker_id}`
+- `DELETE /api/v1/speakers/{speaker_id}`
+- `GET /api/v1/sessions/{session_id}/speakers`
+- `POST /api/v1/sessions/{session_id}/speakers/{speaker_id}`
+- `DELETE /api/v1/sessions/{session_id}/speakers/{speaker_id}`
+- `GET /api/v1/events/{event_id}/speakers`
+- `POST /api/v1/events/{event_id}/speakers/{speaker_id}`
+- `DELETE /api/v1/events/{event_id}/speakers/{speaker_id}`
+
+> Nota funcional vigente: la asignación directa de ponentes a evento está bloqueada por regla de negocio.  
+> Los endpoints de `POST/DELETE` sobre `/events/{event_id}/speakers/{speaker_id}` responden error de negocio; la asignación válida es por sesión.
+
+### Uploads
+
+- `POST /api/v1/uploads/events/featured-image`
+
+### Metrics (admin)
+
+- `GET /api/v1/metrics/summary`
+
+Filtros:
+
+- `start_date`
+- `end_date`
+- `event_status`
+- `organizer_id`
+
+### Health
+
+- `GET /health`
 
 ---
 ## Estructura del repositorio a seguir
@@ -543,35 +585,58 @@ Filtros:
 ```txt
 misEventos/
 ├── backend/
+│   ├── alembic/
+│   │   ├── env.py
+│   │   └── versions/
 │   ├── app/
 │   │   ├── api/
 │   │   │   └── v1/
 │   │   ├── core/
 │   │   ├── models/
+│   │   ├── repositories/
 │   │   ├── schemas/
 │   │   ├── services/
-│   │   ├── repositories/
 │   │   ├── tests/
 │   │   └── main.py
-│   ├── alembic/
+│   ├── media/
+│   │   └── events/
+│   ├── alembic.ini
 │   ├── pyproject.toml
+│   ├── poetry.lock
 │   ├── Dockerfile
 │   └── README.md
+├── docs/
+│   ├── Prueba técnica Desarrollador Backend.md
+│   ├── Prueba Técnica  - Desarrollador Backend (1).pdf
+│   └── structured_project.md
 ├── frontend/
+│   ├── public/
+│   │   └── docs/
 │   ├── src/
 │   │   ├── api/
+│   │   ├── app/
 │   │   ├── components/
 │   │   ├── features/
+│   │   ├── hooks/
+│   │   ├── lib/
 │   │   ├── pages/
 │   │   ├── router/
 │   │   ├── store/
+│   │   ├── test/
+│   │   ├── types/
 │   │   └── utils/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.ts
 │   ├── Dockerfile
 │   └── README.md
-├── docker-compose.yml
+├── .env
 ├── .env.example
+├── docker-compose.yml
 └── README.md
 ```
+
+> Nota: `frontend/node_modules`, `frontend/dist` y carpetas `__pycache__` son artefactos generados y no forman parte de la estructura base de código fuente.
 
 ---
 ## Frontend mínimo
@@ -627,38 +692,7 @@ misEventos/
 - `admin` con permisos globales; `organizer` con gestión de eventos/sesiones; `attendee` con inscripción/cancelación.
 
 ---
-## Plan de implementación (ruta de trabajo)
 
-### Fase 1: base técnica
-
-- estructura backend/frontend.
-- DB + Alembic.
-- Docker Compose.
-
-### Fase 2: backend core
-
-- auth.
-- eventos (CRUD + búsqueda + paginación).
-
-### Fase 3: backend negocio
-
-- sesiones.
-- inscripciones.
-- validaciones críticas.
-
-### Fase 4: frontend core
-
-- auth frontend.
-- listado/detalle/create/edit de eventos.
-- perfil de inscripciones.
-
-### Fase 5: cierre
-
-- pruebas mínimas.
-- documentación.
-- revisión final de errores.
-
----
 ## Definition of Done (DoD)
 
 Considero una parte terminada cuando:
