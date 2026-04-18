@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import { EventFeaturedImage } from "@/components/EventFeaturedImage";
-import { SectionSpinner } from "@/components/SectionSpinner";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -129,7 +128,6 @@ export function EventsPage() {
         </CardContent>
       </Card>
 
-      {loading && <SectionSpinner label="Cargando eventos..." />}
       {error && <p className="error">{error}</p>}
 
       {loading && (
@@ -154,48 +152,52 @@ export function EventsPage() {
         </div>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {visibleEvents.map((event) => (
-          <Card key={event.id} className="overflow-hidden pt-0">
-            <EventFeaturedImage
-              name={event.name}
-              alt={event.featured_image_alt}
-              smUrl={event.featured_image_sm_url}
-              mdUrl={event.featured_image_md_url}
-              lgUrl={event.featured_image_lg_url}
-              className="h-44 w-full object-cover"
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            />
-            <CardHeader>
-              <CardTitle>{event.name}</CardTitle>
-              <CardDescription>
-                {event.location || "Sin ubicación"} ·{" "}
-                {eventStatusLabel(event.status)}
-              </CardDescription>
-              <p className="muted">
-                Fecha: {formatEventDate(event.start_date)} -{" "}
-                {formatEventDate(event.end_date)}
-              </p>
-            </CardHeader>
-            <CardContent>
-              <p>{event.description || "Sin descripción"}</p>
-            </CardContent>
-            <CardFooter className="gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to={`/events/${event.id}`}>Ver detalle</Link>
-              </Button>
-              {canManageEvents &&
-                (isAdmin || user?.id === event.organizer_id) && (
-                  <Button asChild size="sm">
-                    <Link to={`/events/${event.id}/edit`}>Editar</Link>
-                  </Button>
-                )}
-            </CardFooter>
-          </Card>
-        ))}
-      </div>
-      {!loading && !visibleEvents.length && (
-        <p className="muted mt-3">No hay eventos para la fecha seleccionada.</p>
+      {!loading && (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {visibleEvents.map((event) => (
+            <Card key={event.id} className="overflow-hidden pt-0">
+              <EventFeaturedImage
+                name={event.name}
+                alt={event.featured_image_alt}
+                smUrl={event.featured_image_sm_url}
+                mdUrl={event.featured_image_md_url}
+                lgUrl={event.featured_image_lg_url}
+                className="h-44 w-full object-cover"
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              />
+              <CardHeader>
+                <CardTitle>{event.name}</CardTitle>
+                <CardDescription>
+                  {event.location || "Sin ubicación"} ·{" "}
+                  {eventStatusLabel(event.status)}
+                </CardDescription>
+                <p className="muted">
+                  Fecha: {formatEventDate(event.start_date)} -{" "}
+                  {formatEventDate(event.end_date)}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <p>{event.description || "Sin descripción"}</p>
+              </CardContent>
+              <CardFooter className="gap-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to={`/events/${event.id}`}>Ver detalle</Link>
+                </Button>
+                {canManageEvents &&
+                  (isAdmin || user?.id === event.organizer_id) && (
+                    <Button asChild size="sm">
+                      <Link to={`/events/${event.id}/edit`}>Editar</Link>
+                    </Button>
+                  )}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+      {!loading && !error && !visibleEvents.length && (
+        <p className="muted mt-3">
+          {filterDate ? "No hay eventos para la fecha seleccionada." : "No hay eventos para mostrar."}
+        </p>
       )}
 
       <Pagination className="mt-6">

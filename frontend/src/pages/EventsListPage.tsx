@@ -5,12 +5,13 @@ import { Link } from "react-router-dom";
 import { EventFeaturedImage } from "@/components/EventFeaturedImage";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuthStore } from "@/store/authStore";
 import { useEventsStore } from "@/store/eventsStore";
 import { eventStatusLabel } from "@/utils/labels";
 
 export function EventsListPage() {
-  const { events, fetchEvents } = useEventsStore();
+  const { events, loading, fetchEvents } = useEventsStore();
   const { isAuthenticated, user } = useAuthStore();
   const [lottieData, setLottieData] = useState<Record<string, unknown> | null>(null);
   const [LottiePlayer, setLottiePlayer] = useState<ComponentType<any> | null>(null);
@@ -121,33 +122,53 @@ export function EventsListPage() {
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
             >
-              <div className="mx-auto flex w-max gap-4 pb-0">
-                {loopingEvents.map((event, index) => (
-                  <Card key={`${event.id}-${index}`} className="w-[290px] shrink-0 pt-0">
-                    <EventFeaturedImage
-                      name={event.name}
-                      alt={event.featured_image_alt}
-                      smUrl={event.featured_image_sm_url}
-                      mdUrl={event.featured_image_md_url}
-                      lgUrl={event.featured_image_lg_url}
-                      className="h-36 w-full object-cover"
-                      sizes="290px"
-                    />
-                    <CardHeader>
-                      <CardTitle>{event.name}</CardTitle>
-                      <CardDescription>
-                        {event.location || "Sin ubicación"} · {eventStatusLabel(event.status)}
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardFooter>
-                      <Button asChild variant="outline" size="sm">
-                        <Link to={`/events/${event.id}`}>Ver detalle</Link>
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
+              {(loading || !events.length) ? (
+                <div className="mx-auto flex w-max gap-4 pb-0">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <Card key={`home-slide-skeleton-${index}`} className="w-[290px] shrink-0 pt-0">
+                      <Skeleton className="h-36 w-full" />
+                      <CardHeader>
+                        <Skeleton className="h-6 w-3/4" />
+                        <Skeleton className="h-4 w-2/3" />
+                      </CardHeader>
+                      <CardContent>
+                        <Skeleton className="h-4 w-full" />
+                      </CardContent>
+                      <CardFooter>
+                        <Skeleton className="h-9 w-24" />
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="mx-auto flex w-max gap-4 pb-0">
+                  {loopingEvents.map((event, index) => (
+                    <Card key={`${event.id}-${index}`} className="w-[290px] shrink-0 pt-0">
+                      <EventFeaturedImage
+                        name={event.name}
+                        alt={event.featured_image_alt}
+                        smUrl={event.featured_image_sm_url}
+                        mdUrl={event.featured_image_md_url}
+                        lgUrl={event.featured_image_lg_url}
+                        className="h-36 w-full object-cover"
+                        sizes="290px"
+                      />
+                      <CardHeader>
+                        <CardTitle>{event.name}</CardTitle>
+                        <CardDescription>
+                          {event.location || "Sin ubicación"} · {eventStatusLabel(event.status)}
+                        </CardDescription>
+                      </CardHeader>
+                      
+                      <CardFooter>
+                        <Button asChild variant="outline" size="sm">
+                          <Link to={`/events/${event.id}`}>Ver detalle</Link>
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

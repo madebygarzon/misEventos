@@ -23,6 +23,7 @@ services:
       - ./backend/.env.example
     environment:
       DATABASE_URL: postgresql+psycopg://postgres:postgres@db:5432/mis_eventos
+      BACKEND_CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173
     ports:
       - "8000:8000"
     depends_on:
