@@ -498,6 +498,108 @@ Con esto logro un sistema simple de desplegar, fácil de probar y suficientement
 - feedback visual para acciones: éxito/error/validación -> `Cumplido`.
 
 ---
+## Pruebas (guía de ejecución para la entrega)
+
+### Objetivo
+
+Esta sección define cómo ejecuto y valido las pruebas del MVP antes de entregar.
+
+### Herramientas
+
+- Backend: `pytest` (con `poetry`).
+- Frontend: `Vitest`.
+- Ejecución recomendada: contenedores con `Docker Compose`.
+
+### Alcance de pruebas
+
+- Backend:
+  - autenticación (`auth`)
+  - eventos (`events`)
+  - sesiones (`sessions`)
+  - inscripciones (`registrations`)
+  - ponentes (`speakers`)
+  - usuarios y roles (`users`)
+- Frontend:
+  - pruebas unitarias/componentes clave de páginas principales.
+
+### Precondiciones
+
+- Docker Desktop ejecutándose.
+- Servicios levantados desde raíz del proyecto:
+
+```bash
+docker compose up --build
+```
+
+- Migraciones aplicadas:
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+### Comandos de pruebas (Docker)
+
+Backend:
+
+```bash
+docker compose exec backend poetry run pytest -q
+```
+
+Frontend:
+
+```bash
+docker compose exec frontend npm run test
+```
+
+### Comandos de pruebas (ejecución local sin Docker)
+
+Backend:
+
+```bash
+cd backend
+poetry install
+poetry run alembic upgrade head
+poetry run pytest -q
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm install
+npm run test
+```
+
+### Linting útil para acompañar la entrega
+
+Backend:
+
+```bash
+cd backend
+poetry run ruff check .
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run lint
+```
+
+### Criterio de aceptación para esta entrega
+
+- Backend: suite `pytest` pasando completamente.
+- Frontend: suite `vitest` pasando completamente.
+- Errores de test: `0`.
+- Warnings no bloqueantes: permitidos si no afectan resultado funcional (dejo evidencia en logs si aparecen).
+
+### Evidencia mínima que debo reportar
+
+- comando ejecutado,
+- resumen final de tests (ej: `33 passed` backend, `2 passed` frontend),
+- fecha de ejecución.
+
+---
 ## API final construida
 
 ### Auth

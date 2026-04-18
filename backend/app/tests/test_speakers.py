@@ -154,7 +154,7 @@ def test_forbidden_assign_speaker_by_non_owner(client, session: Session):
     assert forbidden.status_code == 403
 
 
-def test_assign_and_remove_speaker_from_event(client, session: Session):
+def test_assign_speaker_directly_to_event_is_rejected(client, session: Session):
     headers = _auth_headers(client, "speaker_owner4@example.com", session, organizer=True)
 
     event = client.post("/api/v1/events", json=_event_payload(), headers=headers).json()
@@ -169,19 +169,19 @@ def test_assign_and_remove_speaker_from_event(client, session: Session):
         json={"role_in_event": "Mentora principal"},
         headers=headers,
     )
-    assert assigned.status_code == 201
-    assert assigned.json()["speaker"]["full_name"] == "Margaret Hamilton"
-    assert assigned.json()["role_in_event"] == "Mentora principal"
+    assert assigned.status_code == 400
+    assert assigned.json()["detail"] == "Speaker can only be assigned to a session, not directly to an event."
 
     listing = client.get(f"/api/v1/events/{event['id']}/speakers")
     assert listing.status_code == 200
-    assert len(listing.json()) == 1
+    assert listing.json() == []
 
     removed = client.delete(
         f"/api/v1/events/{event['id']}/speakers/{speaker['id']}",
         headers=headers,
     )
-    assert removed.status_code == 204
+    assert removed.status_code == 400
+    assert removed.json()["detail"] == "Speaker can only be assigned to a session, not directly to an event."
 
 
 def test_forbidden_assign_event_speaker_by_non_owner(client, session: Session):
@@ -200,4 +200,5 @@ def test_forbidden_assign_event_speaker_by_non_owner(client, session: Session):
         json={},
         headers=other_headers,
     )
-    assert forbidden.status_code == 403
+    assert forbidden.status_code == 400
+    assert forbidden.json()["detail"] == "Speaker can only be assigned to a session, not directly to an event."
