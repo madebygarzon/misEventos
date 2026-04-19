@@ -481,7 +481,10 @@ export function ProfilePage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between gap-3">
-                  <CardTitle>Información personal</CardTitle>
+                  <div className="space-y-1">
+                    <CardTitle>Información personal</CardTitle>
+                    <CardDescription>Consulta y actualiza tus datos básicos y tu contraseña.</CardDescription>
+                  </div>
                   <Dialog
                     open={profileDialogOpen}
                     onOpenChange={(open) => {
@@ -593,6 +596,9 @@ export function ProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Eventos organizados por mí</CardTitle>
+                <CardDescription>
+                  Revisa los eventos que has creado, su estado actual y acceso rápido al detalle.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {organizedLoading && <SectionSpinner label="Cargando eventos organizados..." />}
@@ -623,7 +629,7 @@ export function ProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Eventos en los que estoy agendado</CardTitle>
-                <CardDescription>Historial de tus registros y detalle de organizador/ponentes.</CardDescription>
+                <CardDescription>Lista de eventos a los que te has inscrito y su detalle.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 {loading && <SectionSpinner label="Cargando..." />}
@@ -662,7 +668,7 @@ export function ProfilePage() {
               <CardHeader>
                 <CardTitle>Gestión de usuarios</CardTitle>
                 <CardDescription>
-                  Como administrador puedo cambiar el rol a Asistente, Organizador o Administrador.
+                  Administra usuarios de la plataforma y actualiza sus roles de acceso.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -710,7 +716,9 @@ export function ProfilePage() {
             <Card>
               <CardHeader>
                 <CardTitle>Todos los eventos</CardTitle>
-                <CardDescription>Vista global para administración.</CardDescription>
+                <CardDescription>
+                  Vista global para filtrar, ordenar y consultar rápidamente todos los eventos creados.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="grid items-center gap-3 md:grid-cols-[1fr_1fr_180px_auto_auto]">
