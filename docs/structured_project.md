@@ -41,7 +41,7 @@ Mi foco es una sola entrega funcional y sólida.
 - validaciones críticas de negocio.
 - Swagger disponible.
 - ejecución con Docker Compose.
-- pruebas mínimas de backend.
+- pruebas mínimas de backend y frontend.
 
 ---
 ### Flujos de usuario, permisos y componentes
@@ -422,13 +422,6 @@ Con esto logro un sistema simple de desplegar, fácil de probar y suficientement
 - repositorios ocultando reglas de negocio.
 - acoplar lógica de dominio a detalles del framework.
 
-#### Resumen honesto para esta entrega
-
-- En esta versión MVP, el diseño es limpio y mantenible, pero no “SOLID puro” al 100%.
-- Tengo cumplimiento sólido en separación por capas y encapsulamiento de reglas de negocio.
-- Tengo deuda técnica consciente en SRP (caso puntual de `events`) y en DIP/ISP (falta de interfaces formales).
-- Esta deuda no bloquea la entrega funcional del MVP, pero ya está identificada para refactor posterior.
-
 ---
 ## Stack a usar
 
@@ -528,13 +521,45 @@ Esta sección define cómo ejecuto y valido las pruebas del MVP antes de entrega
 - Servicios levantados desde raíz del proyecto:
 
 ```bash
-docker compose up --build
+docker compose up -d
 ```
 
 - Migraciones aplicadas:
 
 ```bash
 docker compose exec backend alembic upgrade head
+```
+
+### Paso a paso recomendado (Docker)
+
+1. Levantar contenedores:
+
+```bash
+docker compose up -d
+```
+
+2. Instalar dependencias de desarrollo del backend (incluye `pytest`):
+
+```bash
+docker compose exec backend poetry install --with dev
+```
+
+3. Aplicar migraciones:
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+4. Ejecutar tests de backend:
+
+```bash
+docker compose exec backend poetry run pytest -q
+```
+
+5. Ejecutar tests de frontend:
+
+```bash
+docker compose exec frontend npm run test
 ```
 
 ### Comandos de pruebas (Docker)
@@ -550,6 +575,11 @@ Frontend:
 ```bash
 docker compose exec frontend npm run test
 ```
+
+Resultado esperado (referencia de esta entrega):
+
+- Backend: `33 passed`
+- Frontend: `2 passed`
 
 ### Comandos de pruebas (ejecución local sin Docker)
 
@@ -569,6 +599,25 @@ cd frontend
 npm install
 npm run test
 ```
+
+### Troubleshooting rápido
+
+- Error: `Command not found: pytest`
+  - Ejecutar:
+
+```bash
+docker compose exec backend poetry install --with dev
+```
+
+- Error: `no such table: ...`
+  - Ejecutar migraciones:
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+- Warnings en frontend (`React Router Future Flag`, `act(...)`, `AggregateError` en jsdom)
+  - No bloquean la entrega si el resumen final indica tests en verde.
 
 ### Linting útil para acompañar la entrega
 
