@@ -65,3 +65,14 @@ class RegistrationService:
 
     def my_registrations(self, user_id: UUID) -> list[Registration]:
         return self.registration_repository.list_by_user(user_id=user_id)
+
+    def event_registrations(
+        self,
+        user_id: UUID,
+        event_id: UUID,
+        is_admin: bool = False,
+    ) -> list[Registration]:
+        event = self._get_event_or_404(event_id)
+        if not is_admin and event.organizer_id != user_id:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
+        return self.registration_repository.list_registered_by_event(event_id=event_id)

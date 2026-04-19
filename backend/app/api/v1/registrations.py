@@ -8,6 +8,8 @@ from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.repositories.registration_repository import RegistrationRepository
 from app.schemas.registration import (
+    EventRegistrationUserResponse,
+    EventRegistrationsResponse,
     MyRegistrationsResponse,
     RegistrationCreate,
     RegistrationResponse,
@@ -65,3 +67,31 @@ def my_registrations(
     service = RegistrationService(RegistrationRepository(session), EventRepository(session))
     items = service.my_registrations(user_id=current_user.id)
     return MyRegistrationsResponse(items=[_to_response(item) for item in items], total=len(items))
+
+
+@router.get("/events/{event_id}/registrations", response_model=EventRegistrationsResponse)
+def event_registrations(
+    event_id: UUID,
+    session: Session = Depends(get_db_session),
+    current_user: User = Depends(get_current_user),
+    role_names: set[str] = Depends(require_roles("organizer", "admin")),
+) -> EventRegistrationsResponse:
+    service = RegistrationService(RegistrationRepository(session), EventRepository(session))
+    items = service.event_registrations(
+        user_id=current_user.id,
+        event_id=event_id,
+        is_admin="admin" in role_names,
+    )
+    rows: list[EventRegistrationUserResponse] = []
+    for item in items:
+        registered_user = session.get(User, item.user_id)
+        rows.append(
+            EventRegistrationUserResponse(
+                user_id=str(item.user_id),
+                full_name=registered_user.full_name if registered_user else "No disponible",
+                email=registered_user.email if registered_user else "No disponible",
+                status=item.status,
+                registered_at=item.registered_at,
+            )
+        )
+    return EventRegistrationsResponse(items=rows, total=len(rows))

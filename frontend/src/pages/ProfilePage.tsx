@@ -37,13 +37,13 @@ import {
 } from "@/components/ui/tooltip";
 import { notifyError, notifySuccess } from "@/utils/notifications";
 import { getEventRequest, listEventsRequest } from "../api/events";
-import { myRegistrationsRequest } from "../api/registrations";
+import { eventRegistrationsRequest, myRegistrationsRequest } from "../api/registrations";
 import { listSessionsByEventRequest } from "../api/sessions";
 import { listSessionSpeakersRequest } from "../api/speakers";
 import { listUsersRequest, updateMyProfileRequest, updateUserRoleRequest } from "../api/users";
 import { useAuthStore } from "../store/authStore";
 import type { EventItem } from "../types/event";
-import type { RegistrationItem } from "../types/registration";
+import type { EventRegistrationUserItem, RegistrationItem } from "../types/registration";
 import type { ManagedRole, ManagedUser } from "../types/user";
 import { getErrorMessage } from "../utils/errors";
 import { eventStatusLabel, registrationStatusLabel, roleLabel } from "../utils/labels";
@@ -65,6 +65,12 @@ export function ProfilePage() {
   const [allEventsOrganizerFilter, setAllEventsOrganizerFilter] = useState("");
   const [allEventsDateFilter, setAllEventsDateFilter] = useState("");
   const [allEventsSortBy, setAllEventsSortBy] = useState<"name" | "date">("name");
+  const [eventRegistrationsDialogOpen, setEventRegistrationsDialogOpen] = useState(false);
+  const [eventRegistrationsLoading, setEventRegistrationsLoading] = useState(false);
+  const [eventRegistrationsError, setEventRegistrationsError] = useState<string | null>(null);
+  const [eventRegistrationsItems, setEventRegistrationsItems] = useState<EventRegistrationUserItem[]>([]);
+  const [eventRegistrationsTotal, setEventRegistrationsTotal] = useState(0);
+  const [selectedEventForRegistrations, setSelectedEventForRegistrations] = useState<EventItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [organizedLoading, setOrganizedLoading] = useState(false);
@@ -448,6 +454,25 @@ export function ProfilePage() {
     }
   };
 
+  const openEventRegistrationsDialog = async (event: EventItem) => {
+    setSelectedEventForRegistrations(event);
+    setEventRegistrationsDialogOpen(true);
+    setEventRegistrationsLoading(true);
+    setEventRegistrationsError(null);
+    setEventRegistrationsItems([]);
+    setEventRegistrationsTotal(0);
+    try {
+      const data = await eventRegistrationsRequest(event.id);
+      setEventRegistrationsItems(data.items);
+      setEventRegistrationsTotal(data.total);
+    } catch (err: any) {
+      const message = getErrorMessage(err, "No fue posible cargar los inscritos del evento.");
+      setEventRegistrationsError(message.includes("Not Found") ? "Sin registros" : message);
+    } finally {
+      setEventRegistrationsLoading(false);
+    }
+  };
+
   return (
     <div className="container">
       <h1 className="my-6">Mi perfil</h1>
@@ -779,7 +804,7 @@ export function ProfilePage() {
                           <TableHead>Fecha</TableHead>
                           <TableHead>Organizador</TableHead>
                           <TableHead className="text-center">Estado</TableHead>
-                          <TableHead className="text-right">Ver detalles</TableHead>
+                          <TableHead className="text-right">Inscritos</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -801,8 +826,16 @@ export function ProfilePage() {
                               </TooltipProvider>
                             </TableCell>
                             <TableCell className="text-right">
-                              <Button asChild variant="outline" size="sm">
-                                <Link to={`/events/${event.id}`}>Ver detalle</Link>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="icon-sm"
+                                aria-label={`Ver inscritos de ${event.name}`}
+                                onClick={() => {
+                                  void openEventRegistrationsDialog(event);
+                                }}
+                              >
+                                <Eye className="size-4" />
                               </Button>
                             </TableCell>
                           </TableRow>
@@ -820,6 +853,76 @@ export function ProfilePage() {
                     </div>
                   </div>
                 )}
+
+                <Dialog
+                  open={eventRegistrationsDialogOpen}
+                  onOpenChange={(open) => {
+                    setEventRegistrationsDialogOpen(open);
+                    if (!open) {
+                      setSelectedEventForRegistrations(null);
+                      setEventRegistrationsError(null);
+                      setEventRegistrationsItems([]);
+                      setEventRegistrationsTotal(0);
+                    }
+                  }}
+                >
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Inscritos al evento</DialogTitle>
+                      <DialogDescription>
+                        {selectedEventForRegistrations
+                          ? `Listado de usuarios inscritos en "${selectedEventForRegistrations.name}".`
+                          : "Listado de usuarios inscritos."}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                      {eventRegistrationsLoading && <SectionSpinner label="Cargando inscritos..." />}
+                      {!eventRegistrationsLoading && eventRegistrationsError && (
+                        <p className="error">{eventRegistrationsError}</p>
+                      )}
+                      {!eventRegistrationsLoading &&
+                        !eventRegistrationsError &&
+                        !eventRegistrationsItems.length && (
+                          <p className="muted">Sin registros</p>
+                        )}
+                      {!eventRegistrationsLoading && !eventRegistrationsError && !!eventRegistrationsItems.length && (
+                        <div className="max-h-[360px] overflow-auto rounded-lg border border-border">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead>Nombre</TableHead>
+                                <TableHead>Correo</TableHead>
+                                <TableHead>Estado</TableHead>
+                                <TableHead>Fecha de inscripción</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {eventRegistrationsItems.map((item) => (
+                                <TableRow key={`${selectedEventForRegistrations?.id}-${item.user_id}`}>
+                                  <TableCell className="font-medium">{item.full_name}</TableCell>
+                                  <TableCell>{item.email}</TableCell>
+                                  <TableCell>{registrationStatusLabel(item.status)}</TableCell>
+                                  <TableCell>
+                                    {new Date(item.registered_at).toLocaleString("es-CO", {
+                                      day: "2-digit",
+                                      month: "2-digit",
+                                      year: "numeric",
+                                      hour: "2-digit",
+                                      minute: "2-digit"
+                                    })}
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                      <div className="rounded-lg border border-border bg-muted/20 px-3 py-2 text-sm">
+                        <strong>Total inscritos:</strong> {eventRegistrationsTotal}
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </CardContent>
             </Card>
           )}

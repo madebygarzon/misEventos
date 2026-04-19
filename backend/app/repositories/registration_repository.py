@@ -40,3 +40,14 @@ class RegistrationRepository:
             .order_by(Registration.registered_at.desc())
         )
         return list(self.session.exec(statement).all())
+
+    def list_registered_by_event(self, event_id) -> list[Registration]:
+        statement = (
+            select(Registration)
+            .where(
+                Registration.event_id == event_id,
+                Registration.status == "registered",
+            )
+            .order_by(Registration.registered_at.desc())
+        )
+        return list(self.session.exec(statement).all())

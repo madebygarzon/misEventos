@@ -19,3 +19,16 @@ class RegistrationResponse(BaseModel):
 class MyRegistrationsResponse(BaseModel):
     items: list[RegistrationResponse]
     total: int
+
+
+class EventRegistrationUserResponse(BaseModel):
+    user_id: str
+    full_name: str
+    email: str
+    status: str
+    registered_at: datetime
+
+
+class EventRegistrationsResponse(BaseModel):
+    items: list[EventRegistrationUserResponse]
+    total: int
