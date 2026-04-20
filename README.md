@@ -84,7 +84,19 @@ docker compose exec backend alembic upgrade head
 docker compose exec backend alembic current
 ```
 
-### 4.4 Ejecutar tests
+### 4.4 Cargar datos demo (seed)
+
+Para poblar la base con datos de ejemplo (usuarios, eventos, sesiones e inscripciones):
+
+```bash
+docker compose exec -T db psql -U postgres -d mis_eventos < docs/seed.sql
+```
+
+Credencial demo admin:
+- email: `madebygarzon@gmail.com`
+- password: `Admin123*`
+
+### 4.5 Ejecutar tests
 
 Backend:
 

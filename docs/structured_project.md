@@ -222,25 +222,51 @@ cp frontend/.env.example frontend/.env
 docker compose up --build -d
 ```
 
-4. Aplicar migraciones:
-
-```bash
-docker compose exec backend alembic upgrade head
-```
-
-5. Verificar estado de contenedores:
+4. Confirmar que `backend` esté en ejecución (requerido para migrar):
 
 ```bash
 docker compose ps
 ```
 
-6. Abrir la aplicación:
+Si `backend` no aparece `Up`, revisar:
+
+```bash
+docker compose logs --tail=120 backend
+```
+
+5. Aplicar migraciones:
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend alembic current
+```
+
+Resultado esperado en `alembic current`:
+- `0010_create_event_speakers (head)`
+
+6. Cargar datos demo:
+
+```bash
+docker compose exec -T db psql -U postgres -d mis_eventos < docs/seed.sql
+```
+
+Credencial demo admin:
+- email: `madebygarzon@gmail.com`
+- password: `Admin123*`
+
+7. Verificar estado de contenedores:
+
+```bash
+docker compose ps
+```
+
+8. Abrir la aplicación:
 
 - Frontend: `http://localhost:5173`
 - Backend: `http://localhost:8000`
 - Swagger: `http://localhost:8000/docs`
 
-7. Validar que Redis está operativo:
+9. Validar que Redis está operativo:
 
 ```bash
 docker compose exec redis redis-cli ping
@@ -272,6 +298,7 @@ cp frontend/.env.example frontend/.env
 cd backend
 poetry install
 poetry run alembic upgrade head
+poetry run alembic current
 poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 

@@ -49,7 +49,12 @@ Desde la raíz del proyecto:
 ```bash
 docker compose up --build
 docker compose exec backend alembic upgrade head
+docker compose exec -T db psql -U postgres -d mis_eventos < docs/seed.sql
 ```
+
+Credencial demo admin (seed):
+- email: `madebygarzon@gmail.com`
+- password: `Admin123*`
 
 ## Comandos útiles
 
