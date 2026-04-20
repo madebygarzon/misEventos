@@ -17,6 +17,17 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # Some revision ids in this project are longer than 32 chars.
+    # Alembic's default alembic_version.version_num size is 32, so we widen it
+    # before Alembic writes the current revision at the end of this migration.
+    op.alter_column(
+        "alembic_version",
+        "version_num",
+        existing_type=sa.String(length=32),
+        type_=sa.String(length=255),
+        existing_nullable=False,
+    )
+
     op.create_table(
         "speakers",
         sa.Column("id", postgresql.UUID(as_uuid=True), nullable=False),
