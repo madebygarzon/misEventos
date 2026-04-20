@@ -195,6 +195,101 @@ Estas variables son referencia para base de datos local; en Docker Compose el se
 | `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | URL base del backend consumida por el cliente React |
 
 ---
+## Paso a paso para correr el proyecto localmente
+
+Esta sección está pensada para una persona que descarga el repositorio por primera vez.
+
+### Opción recomendada: Docker Compose
+
+1. Clonar el repositorio y entrar a la carpeta del proyecto:
+
+```bash
+git clone https://github.com/madebygarzon/misEventos.git
+cd misEventos
+```
+
+2. Crear archivos de entorno desde los ejemplos:
+
+```bash
+cp .env.example .env
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+3. Levantar servicios:
+
+```bash
+docker compose up --build -d
+```
+
+4. Aplicar migraciones:
+
+```bash
+docker compose exec backend alembic upgrade head
+```
+
+5. Verificar estado de contenedores:
+
+```bash
+docker compose ps
+```
+
+6. Abrir la aplicación:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:8000`
+- Swagger: `http://localhost:8000/docs`
+
+7. Validar que Redis está operativo:
+
+```bash
+docker compose exec redis redis-cli ping
+```
+
+Respuesta esperada: `PONG`.
+
+### Opción alternativa: ejecución local sin Docker
+
+Precondiciones:
+
+- Python 3.12
+- Poetry
+- Node.js 20+
+- npm
+- PostgreSQL 16+
+- Redis 7+
+
+1. Configurar variables de entorno:
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+2. Backend:
+
+```bash
+cd backend
+poetry install
+poetry run alembic upgrade head
+poetry run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+3. Frontend (en otra terminal):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+4. Abrir:
+
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:8000`
+- Swagger: `http://localhost:8000/docs`
+
+---
 ### Modelo base de datos
 
 ```mermaid
@@ -540,7 +635,7 @@ docker compose exec backend alembic upgrade head
 docker compose up -d
 ```
 
-2. Instalar dependencias de desarrollo del backend (incluye `pytest`):
+2. Instalar dependencias de desarrollo del backend:
 
 ```bash
 docker compose exec backend poetry install --with dev
@@ -643,12 +738,6 @@ npm run lint
 - Frontend: suite `vitest` pasando completamente.
 - Errores de test: `0`.
 - Warnings no bloqueantes: permitidos si no afectan resultado funcional (dejo evidencia en logs si aparecen).
-
-### Evidencia mínima que debo reportar
-
-- comando ejecutado,
-- resumen final de tests (ej: `33 passed` backend, `2 passed` frontend),
-- fecha de ejecución.
 
 ---
 ## API final construida
