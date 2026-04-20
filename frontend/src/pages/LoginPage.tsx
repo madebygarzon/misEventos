@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { FormEvent, useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ export function LoginPage() {
   const { login, loading, error } = useAuthStore();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [lottieData, setLottieData] = useState<Record<string, unknown> | null>(null);
   const [LottiePlayer, setLottiePlayer] = useState<ComponentType<any> | null>(null);
 
@@ -70,14 +72,26 @@ export function LoginPage() {
 
                   <Field>
                     <FieldLabel htmlFor="login-password">Contraseña</FieldLabel>
-                    <Input
-                      id="login-password"
-                      type="password"
-                      placeholder="Tu contraseña"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Tu contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        className="absolute right-1 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                    </div>
                     <FieldDescription>Mínimo 8 caracteres recomendados.</FieldDescription>
                   </Field>
 

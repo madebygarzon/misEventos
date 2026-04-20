@@ -1,5 +1,6 @@
 import type { ComponentType } from "react";
 import { FormEvent, useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,10 @@ export function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [validationError, setValidationError] = useState("");
   const [lottieData, setLottieData] = useState<Record<string, unknown> | null>(null);
   const [LottiePlayer, setLottiePlayer] = useState<ComponentType<any> | null>(null);
 
@@ -41,6 +46,11 @@ export function RegisterPage() {
 
   const onSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (password !== confirmPassword) {
+      setValidationError("Las contraseñas no coinciden.");
+      return;
+    }
+    setValidationError("");
     const ok = await register({ full_name: fullName, email, password });
     if (ok) navigate("/");
   };
@@ -82,15 +92,51 @@ export function RegisterPage() {
 
                   <Field>
                     <FieldLabel htmlFor="register-password">Contraseña</FieldLabel>
-                    <Input
-                      id="register-password"
-                      type="password"
-                      placeholder="Crea una contraseña"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                    />
+                    <div className="relative">
+                      <Input
+                        id="register-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="Crea una contraseña"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        className="absolute right-1 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      >
+                        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                    </div>
                     <FieldDescription>Usa una contraseña segura para proteger tu cuenta.</FieldDescription>
+                  </Field>
+
+                  <Field>
+                    <FieldLabel htmlFor="register-confirm-password">Confirmar contraseña</FieldLabel>
+                    <div className="relative">
+                      <Input
+                        id="register-confirm-password"
+                        type={showConfirmPassword ? "text" : "password"}
+                        placeholder="Confirma tu contraseña"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                      />
+                      <Button
+                        type="button"
+                        size="icon-sm"
+                        variant="outline"
+                        className="absolute right-1 top-1/2 -translate-y-1/2"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        aria-label={showConfirmPassword ? "Ocultar confirmación de contraseña" : "Mostrar confirmación de contraseña"}
+                      >
+                        {showConfirmPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                      </Button>
+                    </div>
                   </Field>
 
                   <Button type="submit" disabled={loading}>
@@ -99,6 +145,7 @@ export function RegisterPage() {
                   <Button asChild type="button" variant="outline">
                     <Link to="/login">Ya tengo cuenta</Link>
                   </Button>
+                  <FieldError>{validationError}</FieldError>
                   <FieldError>{error}</FieldError>
                 </FieldGroup>
               </form>
