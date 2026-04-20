@@ -252,7 +252,7 @@ docker compose exec -T db psql -U postgres -d mis_eventos < docs/seed.sql
 
 Credencial demo admin:
 - email: `madebygarzon@gmail.com`
-- password: `password123`
+- password: `Admin123*`
 
 7. Verificar estado de contenedores:
 

@@ -19,7 +19,7 @@ const TEST_USERS: TestUser[] = [
   {
     fullName: "Carlos Garzon C",
     email: "madebygarzon@gmail.com",
-    password: "password123",
+    password: "Admin123*",
     role: "Administrador"
   },
   {
