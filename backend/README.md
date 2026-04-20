@@ -23,6 +23,8 @@ Variables principales:
 - `ACCESS_TOKEN_EXPIRE_MINUTES`
 - `DATABASE_URL`
 - `BACKEND_CORS_ORIGINS`
+- `REDIS_URL`
+- `CACHE_TTL_SECONDS`
 - `ADMIN_EMAIL`
 
 Los valores reales de estas variables están documentados en:

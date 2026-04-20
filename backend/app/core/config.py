@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     media_root: str = "/app/media"
     media_url_prefix: str = "/media"
     image_upload_max_size_mb: int = 8
+    redis_url: str = ""
+    cache_ttl_seconds: int = 60
     admin_email: str = "madebygarzon@gmail.com"
     super_admin_email_legacy: str | None = Field(default=None, validation_alias="SUPER_ADMIN_EMAIL")
 

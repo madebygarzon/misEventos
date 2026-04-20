@@ -108,7 +108,7 @@ class SessionService:
         event_session.updated_at = datetime.now(timezone.utc)
         return self.session_repository.update(event_session)
 
-    def delete(self, session_id: UUID, current_user_id: UUID, is_admin: bool = False) -> None:
+    def delete(self, session_id: UUID, current_user_id: UUID, is_admin: bool = False) -> UUID:
         event_session = self.session_repository.get_by_id(session_id)
         if not event_session:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
@@ -118,3 +118,4 @@ class SessionService:
             raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Forbidden")
 
         self.session_repository.delete(event_session)
+        return event_session.event_id

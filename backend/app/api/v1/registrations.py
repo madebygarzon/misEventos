@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlmodel import Session
 
 from app.api.deps import get_current_user, get_db_session, require_roles
+from app.core.cache import cache_delete_patterns
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.repositories.registration_repository import RegistrationRepository
@@ -30,6 +31,10 @@ def _to_response(item) -> RegistrationResponse:
     )
 
 
+def _event_detail_cache_key(event_id: UUID) -> str:
+    return f"events:detail:{event_id}"
+
+
 @router.post(
     "/events/{event_id}/register",
     response_model=RegistrationResponse,
@@ -44,6 +49,7 @@ def register_to_event(
 ) -> RegistrationResponse:
     service = RegistrationService(RegistrationRepository(session), EventRepository(session))
     registration = service.register(user_id=current_user.id, event_id=event_id, payload=payload)
+    cache_delete_patterns(patterns=["events:list:*", _event_detail_cache_key(event_id)])
     return _to_response(registration)
 
 
@@ -56,6 +62,7 @@ def cancel_registration(
 ) -> None:
     service = RegistrationService(RegistrationRepository(session), EventRepository(session))
     service.cancel(user_id=current_user.id, event_id=event_id)
+    cache_delete_patterns(patterns=["events:list:*", _event_detail_cache_key(event_id)])
 
 
 @router.get("/users/me/registrations", response_model=MyRegistrationsResponse)

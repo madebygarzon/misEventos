@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlmodel import Session
 
 from app.api.deps import get_current_user, get_db_session, require_roles
+from app.core.cache import cache_delete_patterns, cache_get_json, cache_set_json
 from app.models.user import User
 from app.repositories.event_repository import EventRepository
 from app.repositories.registration_repository import RegistrationRepository
@@ -12,6 +13,14 @@ from app.schemas.event import EventCreate, EventListResponse, EventResponse, Eve
 from app.services.event_service import EventService
 
 router = APIRouter(prefix="/events", tags=["events"])
+
+
+def _events_list_cache_key(search: str | None, status_filter: str | None, page: int, limit: int) -> str:
+    return f"events:list:search={search or ''}:status={status_filter or ''}:page={page}:limit={limit}"
+
+
+def _event_detail_cache_key(event_id: UUID) -> str:
+    return f"events:detail:{event_id}"
 
 
 def _to_response(event, session: Session) -> EventResponse:
@@ -47,22 +56,36 @@ def list_events(
     limit: int = Query(default=10, ge=1, le=100),
     session: Session = Depends(get_db_session),
 ) -> EventListResponse:
+    cache_key = _events_list_cache_key(search=search, status_filter=status_filter, page=page, limit=limit)
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return EventListResponse.model_validate(cached)
+
     service = EventService(EventRepository(session))
     result = service.list(search=search, status_filter=status_filter, page=page, limit=limit)
-    return EventListResponse(
+    response = EventListResponse(
         items=[_to_response(item, session) for item in result["items"]],
         total=result["total"],
         page=result["page"],
         limit=result["limit"],
         pages=result["pages"],
     )
+    cache_set_json(cache_key, response.model_dump(mode="json"))
+    return response
 
 
 @router.get("/{event_id}", response_model=EventResponse)
 def get_event(event_id: UUID, session: Session = Depends(get_db_session)) -> EventResponse:
+    cache_key = _event_detail_cache_key(event_id)
+    cached = cache_get_json(cache_key)
+    if cached is not None:
+        return EventResponse.model_validate(cached)
+
     service = EventService(EventRepository(session))
     event = service.get_by_id(event_id)
-    return _to_response(event, session)
+    response = _to_response(event, session)
+    cache_set_json(cache_key, response.model_dump(mode="json"))
+    return response
 
 
 @router.post("", response_model=EventResponse, status_code=status.HTTP_201_CREATED)
@@ -74,6 +97,7 @@ def create_event(
 ) -> EventResponse:
     service = EventService(EventRepository(session))
     event = service.create(payload=payload, organizer_id=current_user.id)
+    cache_delete_patterns(patterns=["events:list:*"])
     return _to_response(event, session)
 
 
@@ -92,6 +116,7 @@ def update_event(
         current_user_id=current_user.id,
         is_admin="admin" in role_names,
     )
+    cache_delete_patterns(patterns=["events:list:*", _event_detail_cache_key(event_id)])
     return _to_response(event, session)
 
 
@@ -104,3 +129,4 @@ def delete_event(
 ) -> None:
     service = EventService(EventRepository(session))
     service.delete(event_id=event_id, current_user_id=current_user.id, is_admin="admin" in role_names)
+    cache_delete_patterns(patterns=["events:list:*", _event_detail_cache_key(event_id)])

@@ -184,6 +184,8 @@ Estas variables son referencia para base de datos local; en Docker Compose el se
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `60` | Minutos de vigencia del token |
 | `DATABASE_URL` | `postgresql+psycopg://postgres:postgres@db:5432/mis_eventos` | Conexión a PostgreSQL |
 | `BACKEND_CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Orígenes permitidos para frontend |
+| `REDIS_URL` | `redis://redis:6379/0` | URL de conexión a Redis para caché de lecturas |
+| `CACHE_TTL_SECONDS` | `60` | Tiempo de vida (TTL) en segundos para caché en Redis |
 | `ADMIN_EMAIL` | `madebygarzon@gmail.com` | Usuario admin principal del sistema |
 
 ### Frontend (`/frontend/.env`)
